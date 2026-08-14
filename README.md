@@ -1,66 +1,210 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# HRIS Juru Parkir
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Aplikasi HRIS sederhana untuk pengelolaan juru parkir harian: absensi berbasis
+GPS dengan foto dan validasi geofence, penjadwalan shift, sampai payroll harian
+dan laporan.
 
-## About Laravel
+Dibangun dengan Laravel 12 + Blade, dengan interaksi halaman lewat AJAX (jQuery)
+sehingga setiap modul punya satu URL yang melayani halaman Blade untuk request
+biasa dan JSON untuk request AJAX.
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+---
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Fitur
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+| Modul | Isi |
+|---|---|
+| **Absensi** | Check-in/check-out dengan foto wajib, peta Leaflet, validasi radius & akurasi GPS di sisi server |
+| **Monitoring & Riwayat** | Pantauan absensi harian untuk HR, riwayat pribadi untuk karyawan |
+| **Master data** | Karyawan, Lokasi, Shift, Assignment, User, Role |
+| **Roster** | Generate jadwal shift per periode, termasuk shift lintas hari |
+| **Payroll** | Periode payroll, generate upah harian, potongan, tutup/buka kembali periode |
+| **Laporan** | Laporan absensi dan payroll, lengkap dengan ekspor |
 
-## Learning Laravel
+### Aturan absensi
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+Validasi absensi sepenuhnya dihitung ulang di server — nilai jarak yang dikirim
+browser tidak pernah dipercaya:
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+- Jarak dihitung dengan formula Haversine terhadap titik lokasi.
+- Absensi ditolak bila akurasi GPS perangkat melebihi batas lokasi.
+- Absensi ditolak bila jarak melebihi radius lokasi.
+- Waktu yang dicatat selalu jam server, bukan jam perangkat.
+- Satu baris absensi per karyawan per hari, dijaga oleh unique index di database.
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+Foto absensi disimpan di disk privat `attendance`, **tidak** di-symlink ke
+`public/`, dan hanya bisa diakses lewat route terproteksi
+`/attendance/photo/{photo}`.
 
-## Laravel Sponsors
+---
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+## Kebutuhan sistem
 
-### Premium Partners
+- PHP **8.2+**
+- Composer
+- MySQL / MariaDB
+- Node.js *(opsional — lihat catatan aset di bawah)*
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[WebReinvent](https://webreinvent.com/)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel/)**
-- **[Cyber-Duck](https://cyber-duck.co.uk)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Jump24](https://jump24.co.uk)**
-- **[Redberry](https://redberry.international/laravel/)**
-- **[Active Logic](https://activelogic.com)**
-- **[byte5](https://byte5.de)**
-- **[OP.GG](https://op.gg)**
+---
 
-## Contributing
+## Instalasi
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+```bash
+git clone https://github.com/RifqiIrawan/HRIS_SEDERHANA.git
+cd HRIS_SEDERHANA
 
-## Code of Conduct
+composer install
+cp .env.example .env
+php artisan key:generate
+```
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+Buat database, lalu sesuaikan `.env`:
 
-## Security Vulnerabilities
+```env
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=hris_juru_parkir
+DB_USERNAME=root
+DB_PASSWORD=
+```
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+> **Catatan port:** sesuaikan `DB_PORT` dengan MySQL yang benar-benar berjalan.
+> XAMPP umumnya memakai `3306`, tetapi instalasi paralel sering dipindah
+> (mis. `3310`). Kalau port salah, perintah artisan akan menggantung tanpa
+> pesan error.
 
-## License
+Jalankan migrasi beserta data awal:
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+```bash
+php artisan migrate --seed
+php artisan serve
+```
+
+Aplikasi berjalan di <http://127.0.0.1:8000>.
+
+### Catatan aset
+
+Tampilan aplikasi memakai Bootstrap 5.3, jQuery 3.7, DataTables 2.1 dan
+Leaflet 1.9 **dari CDN**, sedangkan gaya dan skrip aplikasi berada di
+`public/css` dan `public/js`. Artinya `npm install` dan build Vite **tidak
+diperlukan** untuk menjalankan aplikasi — Vite hanya dipakai oleh halaman
+`welcome` bawaan Laravel.
+
+---
+
+## Akun demo
+
+Login memakai **email**, bukan username. Seluruh akun hasil seeder memakai
+password `password`.
+
+| Email | Role | Akses |
+|---|---|---|
+| `admin@hris.test` | ADMIN | Seluruh modul |
+| `hr@hris.test` | HR | Modul operasional (tanpa User & Role) |
+| `jp001@hris.test` … `jp006@hris.test` | EMPLOYEE | Absensi dan riwayat sendiri |
+
+> Halaman absensi (`/attendance`) hanya bisa dibuka akun yang tertaut ke data
+> karyawan. Akun `admin` dan `hr` bawaan seeder tidak tertaut, jadi gunakan
+> `jp001@hris.test` untuk mencoba layar check-in.
+
+⚠️ Password di atas adalah default pengembangan. **Ganti sebelum dipakai di
+lingkungan selain komputer lokal.**
+
+---
+
+## Data contoh
+
+Seeder menyiapkan 3 shift (termasuk shift malam lintas hari), 3 lokasi parkir,
+6 karyawan harian, beserta akun loginnya:
+
+- **Shift** — S1 Pagi (06:00–14:00), S2 Siang (14:00–22:00), S3 Malam (22:00–06:00)
+- **Lokasi** — Parkir Mall A, Parkir Stasiun B, Parkir Rumah Sakit C
+- **Karyawan** — JP001 s.d. JP006
+
+Roster dan absensi contoh ikut dibuat secara default. Untuk melewatinya:
+
+```bash
+HRIS_SEED_DEMO=false php artisan migrate:fresh --seed
+```
+
+---
+
+## Konfigurasi
+
+Ambang geofence dan absensi diatur lewat `.env`, dengan nilai per-lokasi di
+tabel `locations` yang selalu menang bila diisi. Selengkapnya di
+`config/hris.php`.
+
+| Variabel | Default | Keterangan |
+|---|---|---|
+| `HRIS_DEFAULT_RADIUS_METER` | `10` | Radius absensi (meter) |
+| `HRIS_DEFAULT_GPS_ACCURACY_LIMIT` | `20` | Batas akurasi GPS yang diterima (meter) |
+| `HRIS_DEFAULT_LATE_TOLERANCE_MINUTES` | `15` | Toleransi keterlambatan (menit) |
+| `HRIS_CHECKIN_EARLY_WINDOW_MINUTES` | `120` | Seberapa awal check-in dibuka sebelum shift |
+| `HRIS_CHECKOUT_GRACE_MINUTES` | `180` | Tenggang check-out setelah shift berakhir |
+| `HRIS_ATTENDANCE_PHOTO_MAX_KB` | `5120` | Ukuran maksimal foto absensi |
+
+---
+
+## Hak akses
+
+| Modul | ADMIN | HR | EMPLOYEE |
+|---|:--:|:--:|:--:|
+| Dashboard | ✅ | ✅ | ✅ |
+| Riwayat absensi sendiri | ✅ | ✅ | ✅ |
+| Check-in / check-out | ⚠️ | ⚠️ | ✅ |
+| Monitoring absensi | ✅ | ✅ | — |
+| Karyawan, Lokasi, Shift, Assignment | ✅ | ✅ | — |
+| Roster, Payroll, Laporan | ✅ | ✅ | — |
+| Buka kembali periode payroll | ✅ | — | — |
+| User & Role | ✅ | — | — |
+
+⚠️ Route check-in/check-out tidak dibatasi role, tetapi menuntut akun yang
+tertaut ke data karyawan. Akun ADMIN/HR bawaan seeder belum tertaut sehingga
+menerima 403 di halaman tersebut.
+
+---
+
+## Testing
+
+Test dijalankan terhadap **MySQL sungguhan**, bukan SQLite — modul absensi
+bergantung pada unique index dan kolom desimal yang perilakunya ingin diuji di
+mesin database yang benar-benar dipakai.
+
+Siapkan database test terlebih dahulu:
+
+```sql
+CREATE DATABASE hris_juru_parkir_test;
+```
+
+Lalu:
+
+```bash
+php artisan test
+```
+
+---
+
+## Struktur singkat
+
+```
+app/
+  Http/Controllers/   satu controller per modul, melayani Blade + JSON
+  Services/           AttendanceService, GeofenceService, PayrollService, …
+  Models/
+resources/views/
+  components/         data-table & modal-form yang dipakai ulang tiap modul
+  layouts/            app shell, sidebar, navbar
+public/
+  css/app.css         gaya aplikasi
+  js/                 satu berkas per halaman + app.js sebagai helper bersama
+database/
+  migrations/  seeders/  factories/
+tests/
+  Feature/  Unit/
+```
+
+Spesifikasi fungsional lengkap ada di
+[`HRIS_Juru_Parkir_Laravel13_Blade_AJAX_MVP.md`](HRIS_Juru_Parkir_Laravel13_Blade_AJAX_MVP.md);
+komentar di kode merujuk ke nomor pasal dokumen tersebut.
