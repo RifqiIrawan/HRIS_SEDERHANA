@@ -1,0 +1,735 @@
+/* HRIS Juru Parkir — application shell on top of Bootstrap 5.
+   Design language: soft neutral. Light warm-grey ground, white surfaces
+   separated by hairlines rather than shadows, generous radii, one restrained
+   accent. Bootstrap still supplies the components; this file supplies the
+   frame, the table chrome and the attendance-specific pieces. */
+
+:root {
+    --sidebar-width: 258px;
+
+    /* Ground and surfaces */
+    --surface: #ffffff;
+    --surface-sunken: #fafaf9;
+    --surface-raised: #ffffff;
+    --app-bg: #f7f7f6;
+
+    /* Hairlines — the only separator this design uses */
+    --line: #e9e7e4;
+    --line-strong: #dcd9d4;
+
+    /* Ink */
+    --ink: #1c1a17;
+    --ink-soft: #57534e;
+    --ink-muted: #8b857e;
+
+    /* Single accent, plus its wash for active/selected states */
+    --accent: #4f46e5;
+    --accent-ink: #4338ca;
+    --accent-wash: #eef2ff;
+
+    --radius-lg: 16px;
+    --radius-md: 11px;
+    --radius-sm: 8px;
+}
+
+[data-bs-theme="dark"] {
+    --surface: #1c1c1b;
+    --surface-sunken: #191918;
+    --surface-raised: #232322;
+    --app-bg: #131312;
+
+    --line: #2e2d2b;
+    --line-strong: #3d3b38;
+
+    --ink: #ece9e5;
+    --ink-soft: #b5afa7;
+    --ink-muted: #8a847c;
+
+    --accent: #818cf8;
+    --accent-ink: #a5b4fc;
+    --accent-wash: #262a45;
+}
+
+body {
+    background-color: var(--app-bg);
+    color: var(--ink);
+    font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    font-size: .925rem;
+    -webkit-text-size-adjust: 100%;
+    -webkit-font-smoothing: antialiased;
+}
+
+/* Bootstrap paints its own body colour; keep the two in step so components
+   inherit the same ground in both themes. */
+[data-bs-theme] body {
+    --bs-body-bg: var(--app-bg);
+    --bs-body-color: var(--ink);
+    --bs-border-color: var(--line);
+    --bs-secondary-color: var(--ink-soft);
+    --bs-emphasis-color: var(--ink);
+    --bs-link-color-rgb: 79, 70, 229;
+    --bs-link-hover-color-rgb: 67, 56, 202;
+}
+
+[data-bs-theme="dark"] body {
+    --bs-link-color-rgb: 129, 140, 248;
+    --bs-link-hover-color-rgb: 165, 180, 252;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    letter-spacing: -.015em;
+    font-weight: 600;
+}
+
+/* ── Shell ────────────────────────────────────────────────────────────── */
+
+.app-shell {
+    display: flex;
+    min-height: 100vh;
+}
+
+.app-main {
+    flex: 1 1 auto;
+    min-width: 0; /* lets wide tables scroll instead of stretching the page */
+    display: flex;
+    flex-direction: column;
+}
+
+.app-content {
+    flex: 1 1 auto;
+}
+
+@media (min-width: 992px) {
+    .app-sidebar {
+        width: var(--sidebar-width);
+        flex: 0 0 var(--sidebar-width);
+        position: sticky;
+        top: 0;
+        height: 100vh;
+    }
+}
+
+/* ── Sidebar ──────────────────────────────────────────────────────────── */
+
+.app-sidebar {
+    background: var(--surface-sunken);
+    border-right: 1px solid var(--line);
+    color: var(--ink-soft);
+}
+
+.app-sidebar .offcanvas-header {
+    background: var(--surface-sunken);
+    color: var(--ink);
+    border-color: var(--line) !important;
+}
+
+.sidebar-brand {
+    align-items: center;
+    gap: .7rem;
+    padding: 1.35rem 1.35rem 1.15rem;
+    color: var(--ink);
+}
+
+.sidebar-brand i {
+    font-size: 1.5rem;
+    color: var(--accent);
+}
+
+.sidebar-brand strong {
+    display: block;
+    line-height: 1.15;
+    letter-spacing: -.01em;
+    font-size: 1.02rem;
+}
+
+.sidebar-brand small {
+    display: block;
+    font-size: .72rem;
+    color: var(--ink-muted);
+}
+
+.sidebar-nav {
+    overflow-y: auto;
+    padding: .35rem .7rem 1rem;
+}
+
+.sidebar-heading {
+    padding: 1.15rem .65rem .4rem;
+    font-size: .67rem;
+    font-weight: 600;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+}
+
+.sidebar-nav .nav-link {
+    display: flex;
+    align-items: center;
+    gap: .7rem;
+    padding: .5rem .65rem;
+    margin-bottom: 1px;
+    border-radius: var(--radius-sm);
+    color: var(--ink-soft);
+    font-size: .885rem;
+    font-weight: 500;
+    transition: background-color .12s ease, color .12s ease;
+}
+
+.sidebar-nav .nav-link i {
+    width: 1.15rem;
+    text-align: center;
+    font-size: 1.02rem;
+    color: var(--ink-muted);
+}
+
+.sidebar-nav .nav-link:hover {
+    color: var(--ink);
+    background: rgba(120, 113, 108, .09);
+}
+
+.sidebar-nav .nav-link:hover i {
+    color: var(--ink-soft);
+}
+
+.sidebar-nav .nav-link.active {
+    color: var(--accent-ink);
+    background: var(--accent-wash);
+    font-weight: 600;
+}
+
+.sidebar-nav .nav-link.active i {
+    color: var(--accent);
+}
+
+.sidebar-footer {
+    padding: .9rem 1.35rem;
+    border-top: 1px solid var(--line);
+}
+
+/* ── Navbar ───────────────────────────────────────────────────────────── */
+
+.app-main > .navbar,
+.navbar.app-navbar {
+    background: var(--surface);
+    border-bottom: 1px solid var(--line);
+}
+
+.avatar-initial {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 50%;
+    background: var(--accent-wash);
+    color: var(--accent-ink);
+    font-weight: 600;
+    font-size: .82rem;
+}
+
+/* ── Cards ────────────────────────────────────────────────────────────── */
+
+.card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    box-shadow: none;
+}
+
+.card-header,
+.card-footer {
+    background: transparent;
+    border-color: var(--line);
+}
+
+.card-body.border-bottom,
+.card-footer {
+    border-color: var(--line) !important;
+}
+
+/* ── Stat tiles (spec §8) ─────────────────────────────────────────────── */
+
+.stat-card {
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    box-shadow: none;
+}
+
+.stat-card .stat-value {
+    font-size: 1.75rem;
+    font-weight: 650;
+    line-height: 1.15;
+    letter-spacing: -.02em;
+    font-variant-numeric: tabular-nums;
+}
+
+.stat-card .stat-label {
+    font-size: .715rem;
+    font-weight: 600;
+    letter-spacing: .07em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+}
+
+.stat-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: var(--radius-md);
+    font-size: 1.15rem;
+}
+
+/* ── Forms ────────────────────────────────────────────────────────────── */
+
+.form-control,
+.form-select {
+    background-color: var(--surface);
+    border-color: var(--line-strong);
+    border-radius: var(--radius-sm);
+    color: var(--ink);
+    font-size: .9rem;
+    padding: .45rem .7rem;
+}
+
+.form-control:focus,
+.form-select:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, .13);
+}
+
+.form-label {
+    font-size: .82rem;
+    font-weight: 500;
+    color: var(--ink-soft);
+    margin-bottom: .3rem;
+}
+
+.input-group-text {
+    background: var(--surface-sunken);
+    border-color: var(--line-strong);
+    color: var(--ink-muted);
+}
+
+.btn {
+    border-radius: var(--radius-sm);
+    font-size: .88rem;
+    font-weight: 500;
+    padding: .45rem .85rem;
+}
+
+.btn-primary {
+    --bs-btn-bg: var(--accent);
+    --bs-btn-border-color: var(--accent);
+    --bs-btn-hover-bg: var(--accent-ink);
+    --bs-btn-hover-border-color: var(--accent-ink);
+    --bs-btn-active-bg: var(--accent-ink);
+    --bs-btn-active-border-color: var(--accent-ink);
+}
+
+.btn-outline-secondary {
+    --bs-btn-color: var(--ink-soft);
+    --bs-btn-border-color: var(--line-strong);
+    --bs-btn-hover-bg: var(--surface-sunken);
+    --bs-btn-hover-color: var(--ink);
+    --bs-btn-hover-border-color: var(--line-strong);
+}
+
+.modal-content {
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    background: var(--surface);
+}
+
+.modal-header,
+.modal-footer {
+    border-color: var(--line);
+}
+
+.dropdown-menu {
+    border: 1px solid var(--line);
+    border-radius: var(--radius-md);
+    box-shadow: 0 8px 24px rgba(28, 26, 23, .07);
+    background: var(--surface);
+}
+
+/* ── Tables ───────────────────────────────────────────────────────────── */
+
+.table-wrap {
+    overflow-x: auto;
+}
+
+/* A width:100% table shrinks to its container instead of overflowing it, so
+   the wrapper would never actually scroll — the floor is what makes narrow
+   screens scroll rather than crush the columns. */
+.table-wrap > .table {
+    min-width: var(--table-wrap-min-width, 34rem);
+}
+
+.table {
+    --bs-table-bg: transparent;
+    --bs-table-color: var(--ink);
+    --bs-table-border-color: var(--line);
+    margin-bottom: 0;
+}
+
+.table > :not(caption) > * > * {
+    padding: .68rem .85rem;
+    background-color: transparent;
+}
+
+.table thead th {
+    font-size: .715rem;
+    font-weight: 600;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+    white-space: nowrap;
+    border-bottom: 1px solid var(--line);
+    background: var(--surface-sunken);
+}
+
+.table tbody tr {
+    border-color: var(--line);
+}
+
+.table tbody tr:last-child > * {
+    border-bottom-width: 0;
+}
+
+.table td {
+    vertical-align: middle;
+    font-size: .885rem;
+    color: var(--ink);
+}
+
+.table-hover > tbody > tr:hover > * {
+    --bs-table-accent-bg: var(--surface-sunken);
+    background-color: var(--surface-sunken);
+}
+
+.table-empty td {
+    padding: 3rem 1rem;
+    text-align: center;
+    color: var(--ink-muted);
+}
+
+/* ── DataTables (server-side) chrome ──────────────────────────────────── */
+
+/* The table lives flush inside the card: the layout rows carry the padding,
+   and that padding matches the table's own cell inset (.table cell padding,
+   below) so the page-size menu, the row count and the first column all start
+   on the same vertical line. Change one, change the other. */
+.dt-container {
+    width: 100%;
+
+    /* Below this width an 8-column table stops being readable and starts
+       being a word puzzle, so the table row scrolls instead of squeezing.
+       Tables with fewer columns can lower it on their own wrapper. */
+    --dt-table-min-width: 44rem;
+}
+
+/* The filter bar is a .card-body, so it defaults to Bootstrap's 1rem inset —
+   pulled to .85rem so the filters, the table columns and the footer chrome
+   all share one left edge. */
+.card > .dt-filters {
+    padding-left: .85rem;
+    padding-right: .85rem;
+}
+
+/* DataTables' Bootstrap 5 renderer stamps `row mt-2` onto every layout row,
+   and Bootstrap spacing utilities are !important — a plain `margin: 0` loses
+   to them and leaves the rows drifting below the card's hairlines. */
+.dt-container .dt-layout-row {
+    margin: 0 !important;
+    align-items: center;
+    row-gap: .6rem;
+}
+
+/* Scoped to the chrome rows: `:not(:last-child)` would also catch the table
+   row, whose border-bottom then doubled up with the footer's border-top. */
+/* Borders are anchored to the table row rather than :first-child/:last-child,
+   because DataTables also drops its processing bar into the container and
+   would otherwise take the first slot. */
+.dt-container .dt-layout-row:not(.dt-layout-table) {
+    padding: .7rem .85rem;
+    gap: .6rem;
+    border-bottom: 1px solid var(--line);
+}
+
+.dt-container .dt-layout-table ~ .dt-layout-row {
+    border-bottom: 0;
+    border-top: 1px solid var(--line);
+}
+
+/* `.row > *` gives every grid child width:100% until the md breakpoint; the
+   chrome cells should hug their contents at any width instead. */
+.dt-container .dt-layout-cell {
+    padding: 0;
+    width: auto;
+    max-width: 100%;
+}
+
+/* Only the table itself scrolls sideways — the length menu, row count and
+   pager must stay put when a wide table overflows. */
+.dt-container .dt-layout-row.dt-layout-table {
+    overflow-x: auto;
+    display: block;
+    padding: 0;
+}
+
+.dt-container .dt-layout-row.dt-layout-table > .dt-layout-cell {
+    width: 100%;
+}
+
+/* Without a floor the table honours width:100% and crushes its columns to
+   fit, so the scroll container it sits in never actually scrolls. */
+.dt-container table.dataTable {
+    min-width: var(--dt-table-min-width);
+}
+
+.dt-container .dt-length,
+.dt-container .dt-search {
+    display: flex;
+    align-items: center;
+    gap: .45rem;
+    font-size: .82rem;
+    color: var(--ink-muted);
+}
+
+.dt-container .dt-length select {
+    width: auto;
+    min-width: 4.6rem;
+}
+
+.dt-container .dt-info {
+    font-size: .82rem;
+    color: var(--ink-muted);
+    padding-top: 0;
+}
+
+/* Phones: the chrome stacks, and the pager is free to wrap rather than
+   forcing the card wider than the screen. */
+@media (max-width: 575.98px) {
+    .dt-container .dt-layout-row:not(.dt-layout-table) > .dt-layout-cell {
+        width: 100%;
+        justify-content: flex-start;
+    }
+
+    .dt-container .dt-paging .pagination {
+        flex-wrap: wrap;
+        justify-content: flex-start;
+    }
+}
+
+/* Sortable headers: the arrow is a quiet affordance, not a decoration. */
+.table thead th.dt-orderable-asc,
+.table thead th.dt-orderable-desc {
+    cursor: pointer;
+}
+
+.table thead th.dt-orderable-asc:hover,
+.table thead th.dt-orderable-desc:hover {
+    color: var(--ink);
+}
+
+.table thead th.dt-ordering-asc,
+.table thead th.dt-ordering-desc {
+    color: var(--accent-ink);
+}
+
+.dt-column-order {
+    opacity: .45;
+}
+
+th.dt-ordering-asc .dt-column-order,
+th.dt-ordering-desc .dt-column-order {
+    opacity: 1;
+}
+
+/* Pagination */
+.dt-container .dt-paging .pagination {
+    margin: 0;
+    gap: .2rem;
+}
+
+.dt-container .dt-paging .page-link {
+    border: 1px solid transparent;
+    border-radius: var(--radius-sm);
+    color: var(--ink-soft);
+    background: transparent;
+    font-size: .84rem;
+    padding: .3rem .62rem;
+    min-width: 2rem;
+    text-align: center;
+}
+
+.dt-container .dt-paging .page-link:hover {
+    background: var(--surface-sunken);
+    border-color: var(--line);
+    color: var(--ink);
+}
+
+.dt-container .dt-paging .page-item.active .page-link {
+    background: var(--accent-wash);
+    border-color: transparent;
+    color: var(--accent-ink);
+    font-weight: 600;
+}
+
+.dt-container .dt-paging .page-item.disabled .page-link {
+    color: var(--ink-muted);
+    opacity: .45;
+    background: transparent;
+}
+
+/* Processing indicator — a thin bar under the header beats a modal overlay
+   that blocks the filters mid-typing. */
+.dt-container .dt-processing {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    margin: 0;
+    width: 100%;
+    height: 2px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+    text-indent: -9999px;
+    overflow: hidden;
+    z-index: 5;
+}
+
+.dt-container .dt-processing::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    animation: dt-progress 1s ease-in-out infinite;
+}
+
+@keyframes dt-progress {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+}
+
+.card > .dt-container {
+    position: relative;
+}
+
+.dt-empty {
+    text-align: center;
+    color: var(--ink-muted);
+    padding: 3rem 1rem !important;
+}
+
+/* ── Attendance / map ─────────────────────────────────────────────────── */
+
+#attendanceMap,
+#locationMap {
+    height: 320px;
+    width: 100%;
+    border-radius: var(--radius-md);
+    z-index: 0; /* keep Leaflet panes under Bootstrap modals and dropdowns */
+}
+
+@media (max-width: 575.98px) {
+    #attendanceMap {
+        height: 250px;
+    }
+}
+
+.gps-readout {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: .5rem;
+    text-align: center;
+}
+
+.gps-readout .readout-label {
+    font-size: .67rem;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    color: var(--ink-muted);
+}
+
+.gps-readout .readout-value {
+    font-size: 1.05rem;
+    font-weight: 650;
+    font-variant-numeric: tabular-nums;
+}
+
+.camera-stage {
+    position: relative;
+    background: #14130f;
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    aspect-ratio: 4 / 3;
+}
+
+.camera-stage video,
+.camera-stage img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.camera-placeholder {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: .5rem;
+    color: #8b857e;
+    font-size: .85rem;
+}
+
+.photo-thumb {
+    width: 40px;
+    height: 40px;
+    object-fit: cover;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--line);
+    cursor: pointer;
+}
+
+/* ── Misc ─────────────────────────────────────────────────────────────── */
+
+.badge {
+    border-radius: 999px;
+    font-weight: 500;
+    font-size: .735rem;
+    padding: .3em .68em;
+    letter-spacing: .01em;
+}
+
+.badge-status {
+    font-weight: 600;
+}
+
+.roster-cell {
+    min-width: 2.4rem;
+    text-align: center;
+    font-size: .73rem;
+    font-weight: 600;
+}
+
+.cursor-pointer {
+    cursor: pointer;
+}
+
+.text-tabular {
+    font-variant-numeric: tabular-nums;
+}
+
+.toast {
+    border: 1px solid var(--line);
+    border-radius: var(--radius-md);
+    background: var(--surface);
+}
