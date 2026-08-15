@@ -26,6 +26,7 @@ class AttendanceService
     public function __construct(
         private readonly GeofenceService $geofence,
         private readonly AttendancePhotoService $photos,
+        private readonly GeocodingService $geocoder,
     ) {}
 
     /**
@@ -93,9 +94,14 @@ class AttendanceService
 
         $lateMinutes = $this->lateMinutes($roster, $now);
 
+        // Resolved before the transaction opens: this is a third-party HTTP
+        // call and must never hold a row lock while it waits. A null result is
+        // a normal outcome and does not stop the check-in.
+        $address = $this->geocoder->reverseGeocode($latitude, $longitude);
+
         try {
             return DB::transaction(function () use (
-                $employee, $roster, $location, $latitude, $longitude, $accuracy, $verdict, $photo, $now, $lateMinutes
+                $employee, $roster, $location, $latitude, $longitude, $accuracy, $verdict, $photo, $now, $lateMinutes, $address
             ) {
                 $attendance = Attendance::create([
                     'employee_id' => $employee->id,
@@ -108,6 +114,7 @@ class AttendanceService
                     'check_in_longitude' => $longitude,
                     'check_in_accuracy' => $verdict['accuracy'],
                     'check_in_distance' => $verdict['distance'],
+                    'check_in_address' => $address,
                     'late_minutes' => $lateMinutes,
                     // Becomes PRESENT or LATE at check-out; until then the day
                     // is incomplete and payroll will not count it (spec §39).
@@ -170,13 +177,16 @@ class AttendanceService
             throw new AttendanceException($verdict['message'], $verdict['code'], $verdict);
         }
 
-        return DB::transaction(function () use ($attendance, $latitude, $longitude, $verdict, $photo, $now) {
+        $address = $this->geocoder->reverseGeocode($latitude, $longitude);
+
+        return DB::transaction(function () use ($attendance, $latitude, $longitude, $verdict, $photo, $now, $address) {
             $attendance->update([
                 'check_out_at' => $now,
                 'check_out_latitude' => $latitude,
                 'check_out_longitude' => $longitude,
                 'check_out_accuracy' => $verdict['accuracy'],
                 'check_out_distance' => $verdict['distance'],
+                'check_out_address' => $address,
                 'status' => $attendance->late_minutes > 0 ? Attendance::LATE : Attendance::PRESENT,
             ]);
 

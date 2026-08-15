@@ -60,12 +60,17 @@ return [
     |--------------------------------------------------------------------------
     |
     | Here you may specify the default timezone for your application, which
-    | will be used by the PHP date and date-time functions. The timezone
-    | is set to "UTC" by default as it is suitable for most use cases.
+    | will be used by the PHP date and date-time functions.
+    |
+    | Attendance is wall-clock work: a shift starts at 06:00 local, lateness is
+    | measured against that, and the attendance date is whichever local day the
+    | employee is standing in. Running the app in UTC pushed every stamp seven
+    | hours back and, between 00:00 and 07:00 WIB, filed a check-in under the
+    | previous date — so the zone comes from the deployment's own APP_TIMEZONE.
     |
     */
 
-    'timezone' => 'UTC',
+    'timezone' => env('APP_TIMEZONE', 'UTC'),
 
     /*
     |--------------------------------------------------------------------------

@@ -22,12 +22,18 @@ class UserSeeder extends Seeder
     {
         $roles = Role::pluck('id', 'role_code');
 
+        // Linked so the ADMIN account can use the check-in screen: unlinked, it
+        // only ever gets a 403 there (AC-002 reads the employee from this
+        // column). EmployeeSeeder owns the row.
+        $adminEmployeeId = Employee::where('employee_code', EmployeeSeeder::ADMIN_CODE)->value('id');
+
         User::updateOrCreate(
             ['email' => 'admin@hris.test'],
             [
                 'name' => 'Administrator',
                 'password' => self::DEFAULT_PASSWORD,
                 'role_id' => $roles[Role::ADMIN],
+                'employee_id' => $adminEmployeeId,
                 'status' => User::ACTIVE,
             ],
         );
@@ -43,18 +49,24 @@ class UserSeeder extends Seeder
         );
 
         // One login per seeded employee, so the attendance flow can be tried
-        // immediately (AC-002 needs a user linked to an employee row).
-        Employee::orderBy('employee_code')->get()->each(function (Employee $employee) use ($roles) {
-            User::updateOrCreate(
-                ['email' => strtolower($employee->employee_code).'@hris.test'],
-                [
-                    'name' => $employee->full_name,
-                    'password' => self::DEFAULT_PASSWORD,
-                    'role_id' => $roles[Role::EMPLOYEE],
-                    'employee_id' => $employee->id,
-                    'status' => User::ACTIVE,
-                ],
-            );
-        });
+        // immediately (AC-002 needs a user linked to an employee row). The
+        // administrator's row is excluded: it already has the admin login, and
+        // a second user on the same employee would collide on the one-row-per-
+        // employee-per-day attendance index.
+        Employee::where('employee_code', '!=', EmployeeSeeder::ADMIN_CODE)
+            ->orderBy('employee_code')
+            ->get()
+            ->each(function (Employee $employee) use ($roles) {
+                User::updateOrCreate(
+                    ['email' => strtolower($employee->employee_code).'@hris.test'],
+                    [
+                        'name' => $employee->full_name,
+                        'password' => self::DEFAULT_PASSWORD,
+                        'role_id' => $roles[Role::EMPLOYEE],
+                        'employee_id' => $employee->id,
+                        'status' => User::ACTIVE,
+                    ],
+                );
+            });
     }
 }

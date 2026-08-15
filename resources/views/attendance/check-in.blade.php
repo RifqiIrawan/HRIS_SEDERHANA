@@ -4,7 +4,9 @@
 @section('page-subtitle', $employee->employee_code . ' — ' . $employee->full_name)
 
 @push('styles')
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+    {{-- Leaflet 1.9.4 dilayani dari public/vendor/leaflet, bukan CDN: halaman
+         absensi harus tetap bisa dipakai saat internet lokasi sedang buruk. --}}
+    <link rel="stylesheet" href="{{ asset('vendor/leaflet/leaflet.css') }}">
 @endpush
 
 @section('content')
@@ -34,6 +36,15 @@
 
         <div class="alert d-none" id="stateAlert" role="alert"></div>
 
+        {{-- Shown only while config('hris.enforce_geofence') is false, so the
+             screen never quietly accepts a reading from anywhere. --}}
+        <div class="alert alert-danger d-none" id="geofenceWarning" role="alert">
+            <i class="bi bi-shield-exclamation me-1"></i>
+            <strong>Mode uji coba:</strong> penegakan jarak &amp; akurasi GPS sedang dinonaktifkan.
+            Absensi diterima dari posisi mana pun. Aktifkan kembali
+            <code>HRIS_ENFORCE_GEOFENCE=true</code> sebelum digunakan sungguhan.
+        </div>
+
         <div id="attendancePanel" class="d-none">
             <div class="row g-3">
 
@@ -62,6 +73,14 @@
                                     <div class="readout-label">Status</div>
                                     <div class="readout-value" id="readoutStatus">—</div>
                                 </div>
+                            </div>
+
+                            {{-- Reverse-geocoded label for the reading above. Descriptive
+                                 only — the geofence verdict is computed from the
+                                 coordinates, never from this text. --}}
+                            <div class="gps-address mt-3">
+                                <div class="readout-label">Alamat GPS</div>
+                                <div class="gps-address-value" id="readoutAddress">—</div>
                             </div>
 
                             <div class="alert alert-light border small mt-3 mb-0" id="gpsHint">
@@ -153,13 +172,14 @@
 @endsection
 
 @push('scripts')
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="{{ asset('vendor/leaflet/leaflet.js') }}"></script>
 <script>
     window.HRIS_URLS = {
         context: @json(route('attendance.index')),
         checkIn: @json(route('attendance.check-in')),
         checkOut: @json(route('attendance.check-out')),
-        history: @json(route('attendance.history'))
+        history: @json(route('attendance.history')),
+        geocode: @json(route('attendance.geocode'))
     };
 </script>
 <script src="{{ asset('js/attendance.js') }}"></script>

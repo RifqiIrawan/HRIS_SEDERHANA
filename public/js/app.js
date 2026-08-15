@@ -362,6 +362,26 @@ window.HRIS = (function ($) {
         aria: { orderable: 'Urutkan kolom ini', orderableReverse: 'Balik urutan kolom ini' }
     };
 
+    /* DataTables' Bootstrap 5 integration does not add to the layout class
+       names, it replaces them: `row` becomes "row mt-2 justify-content-between"
+       and `cell` becomes "d-md-flex …", so dt-layout-row and dt-layout-cell
+       never reach the DOM and every rule in app.css that targets them is dead —
+       which is why the page-size menu and the row count sat flush against the
+       card border. Putting the names back in front of Bootstrap's keeps both
+       sets of styles. The other layout keys (tableRow, start, end, full) are
+       left alone; the integration already preserves their dt-* names.
+
+       Guarded because app.js also loads on the login page, which has no
+       DataTables. */
+    if ($.fn.dataTable) {
+        $.extend(true, $.fn.dataTable.ext.classes, {
+            layout: {
+                row: 'dt-layout-row row mt-2 justify-content-between',
+                cell: 'dt-layout-cell d-md-flex justify-content-between align-items-center'
+            }
+        });
+    }
+
     /**
      * Creates a server-side DataTable with this application's conventions
      * already applied: Indonesian strings, the shared error handler, and the
@@ -454,6 +474,22 @@ window.HRIS = (function ($) {
         try { localStorage.setItem('hris-theme', theme); } catch (e) { /* ignore */ }
     }
 
+    /* ── Sidebar ────────────────────────────────────────────────────── */
+
+    /**
+     * Which menu groups are folded shut. Stored as the closed set rather than the
+     * open one so a newly added group shows up expanded instead of silently hidden.
+     */
+    function storeClosedGroups() {
+        var closed = $('.sidebar-nav .collapse').not('.show').map(function () {
+            return this.id;
+        }).get();
+
+        try {
+            localStorage.setItem('hris-sidebar-groups', JSON.stringify(closed));
+        } catch (e) { /* ignore — the menu still works, it just will not persist */ }
+    }
+
     $(function () {
         applyTheme(document.documentElement.getAttribute('data-bs-theme') || 'light');
 
@@ -461,6 +497,17 @@ window.HRIS = (function ($) {
             var current = document.documentElement.getAttribute('data-bs-theme');
             applyTheme(current === 'dark' ? 'light' : 'dark');
         });
+
+        $(document).on('click', '.js-sidebar-toggle', function () {
+            var collapsed = document.documentElement.classList.toggle('sidebar-collapsed');
+            try {
+                localStorage.setItem('hris-sidebar', collapsed ? 'collapsed' : 'expanded');
+            } catch (e) { /* ignore */ }
+        });
+
+        // Bootstrap has finished the animation by these events, so the .show classes
+        // read here are the settled state rather than a mid-transition one.
+        $('.sidebar-nav').on('shown.bs.collapse hidden.bs.collapse', '.collapse', storeClosedGroups);
     });
 
     /** Debounce, so keystroke-driven filters do not fire a request per letter. */

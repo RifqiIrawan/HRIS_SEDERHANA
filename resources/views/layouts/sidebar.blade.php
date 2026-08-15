@@ -1,57 +1,10 @@
-@php
+﻿@php
     $user = auth()->user();
-    $isAdmin = $user->isAdmin();
-    $isHr = $user->isHr();
 
-    // Spec §6 & §7 — one menu tree, filtered by role. HR sees operational
-    // master data but not the user/role tables; EMPLOYEE only sees itself.
-    $menu = array_values(array_filter([
-        [
-            'heading' => null,
-            'items' => [
-                ['label' => 'Dashboard', 'icon' => 'speedometer2', 'route' => 'dashboard', 'show' => true],
-                ['label' => 'Absensi Saya', 'icon' => 'geo-alt', 'route' => 'attendance.index', 'show' => ! $isHr],
-            ],
-        ],
-        [
-            'heading' => 'Master Data',
-            'items' => [
-                ['label' => 'User', 'icon' => 'person-gear', 'route' => 'users.index', 'show' => $isAdmin],
-                ['label' => 'Role', 'icon' => 'shield-lock', 'route' => 'roles.index', 'show' => $isAdmin],
-                ['label' => 'Karyawan', 'icon' => 'people', 'route' => 'employees.index', 'show' => $isHr],
-                ['label' => 'Lokasi', 'icon' => 'pin-map', 'route' => 'locations.index', 'show' => $isHr],
-                ['label' => 'Shift', 'icon' => 'clock-history', 'route' => 'shifts.index', 'show' => $isHr],
-                ['label' => 'Assignment', 'icon' => 'diagram-3', 'route' => 'assignments.index', 'show' => $isHr],
-            ],
-        ],
-        [
-            'heading' => 'Jadwal',
-            'items' => [
-                ['label' => 'Shift Roster', 'icon' => 'calendar-week', 'route' => 'rosters.index', 'show' => $isHr],
-            ],
-        ],
-        [
-            'heading' => 'Absensi',
-            'items' => [
-                ['label' => 'Monitoring Absensi', 'icon' => 'activity', 'route' => 'attendance.monitoring', 'show' => $isHr],
-                ['label' => 'Riwayat Absensi', 'icon' => 'journal-text', 'route' => 'attendance.history', 'show' => true],
-            ],
-        ],
-        [
-            'heading' => 'Payroll',
-            'items' => [
-                ['label' => 'Periode Payroll', 'icon' => 'calendar2-range', 'route' => 'payroll.periods', 'show' => $isHr],
-                ['label' => 'Proses & Daftar Payroll', 'icon' => 'cash-stack', 'route' => 'payroll.index', 'show' => $isHr],
-            ],
-        ],
-        [
-            'heading' => 'Laporan',
-            'items' => [
-                ['label' => 'Laporan Absensi', 'icon' => 'file-earmark-bar-graph', 'route' => 'reports.attendance', 'show' => $isHr],
-                ['label' => 'Laporan Payroll', 'icon' => 'file-earmark-spreadsheet', 'route' => 'reports.payroll', 'show' => $isHr],
-            ],
-        ],
-    ], fn ($group) => collect($group['items'])->contains('show', true)));
+    // Spec §6 & §7 — the tree is the role → menu mapping in the database, not a
+    // list written here. MenuAccessService is the same object the route
+    // middleware consults, so a visible entry is always a reachable one.
+    $menu = app(\App\Services\MenuAccessService::class)->treeFor($user);
 @endphp
 
 <aside class="app-sidebar offcanvas-lg offcanvas-start" tabindex="-1" id="appSidebar">
@@ -71,21 +24,35 @@
 
         <nav class="sidebar-nav flex-grow-1">
             @foreach ($menu as $group)
+                {{-- Keyed by heading, not loop index: the menu is role-filtered, so an
+                     index would point at a different group for ADMIN than for HR and the
+                     stored open/closed state would land on the wrong section. --}}
+                @php($groupId = 'sidebarGroup-' . \Illuminate\Support\Str::slug($group['heading'] ?? 'utama'))
+
                 @if ($group['heading'])
-                    <div class="sidebar-heading">{{ $group['heading'] }}</div>
+                    <button class="sidebar-heading sidebar-heading-toggle" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#{{ $groupId }}"
+                            aria-expanded="true" aria-controls="{{ $groupId }}">
+                        <span>{{ $group['heading'] }}</span>
+                        <i class="bi bi-chevron-down sidebar-caret"></i>
+                    </button>
                 @endif
-                <ul class="nav flex-column">
-                    @foreach ($group['items'] as $item)
-                        @continue(! $item['show'])
-                        @php($active = request()->routeIs($item['route']))
-                        <li class="nav-item">
-                            <a class="nav-link {{ $active ? 'active' : '' }}" href="{{ route($item['route']) }}">
-                                <i class="bi bi-{{ $item['icon'] }}"></i>
-                                <span>{{ $item['label'] }}</span>
-                            </a>
-                        </li>
-                    @endforeach
-                </ul>
+
+                {{-- The headingless first group (Dashboard, Absensi Saya) has no toggle,
+                     so it is never wrapped in a collapse â€” it must always stay visible. --}}
+                <div class="{{ $group['heading'] ? 'collapse show' : '' }}" id="{{ $groupId }}">
+                    <ul class="nav flex-column">
+                        @foreach ($group['items'] as $item)
+                            @php($active = request()->routeIs($item->route_name))
+                            <li class="nav-item">
+                                <a class="nav-link {{ $active ? 'active' : '' }}" href="{{ route($item->route_name) }}">
+                                    <i class="bi bi-{{ $item->icon }}"></i>
+                                    <span>{{ $item->menu_name }}</span>
+                                </a>
+                            </li>
+                        @endforeach
+                    </ul>
+                </div>
             @endforeach
         </nav>
 
@@ -97,3 +64,29 @@
         </div>
     </div>
 </aside>
+
+{{-- Groups render open, then this collapses the stored-closed ones. It runs here
+     rather than in app.js so the state is settled before the sidebar is painted â€”
+     deferring to DOMContentLoaded would show every group open for a frame. --}}
+<script>
+    (function () {
+        var closed;
+        try {
+            closed = JSON.parse(localStorage.getItem('hris-sidebar-groups') || '[]');
+        } catch (e) { return; /* unreadable storage â€” leaving everything open is fine */ }
+        if (!Array.isArray(closed)) { return; }
+
+        closed.forEach(function (id) {
+            var panel = document.getElementById(id);
+            if (!panel) { return; }
+
+            // The group holding the current page stays open whatever was stored,
+            // so you are never dropped on a page whose menu section is hidden.
+            if (panel.querySelector('.nav-link.active')) { return; }
+
+            panel.classList.remove('show');
+            var toggle = document.querySelector('[data-bs-target="#' + id + '"]');
+            if (toggle) { toggle.setAttribute('aria-expanded', 'false'); }
+        });
+    })();
+</script>

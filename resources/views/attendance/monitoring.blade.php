@@ -77,7 +77,7 @@
         <th class="text-end">Jarak</th>
         <th class="text-end">Akurasi</th>
         <th class="text-center">Status</th>
-        <th class="text-center">Foto</th>
+        <th class="text-center">Detail</th>
     </x-slot:head>
 </x-data-table>
 
@@ -88,6 +88,8 @@
 <script>
     window.HRIS_URLS = {
         base: @json(route('attendance.monitoring')),
+        // Collection URL for the detail modal; the row id is appended to it.
+        detail: @json(url('attendance')),
         lookups: @json(route('lookups'))
     };
 </script>

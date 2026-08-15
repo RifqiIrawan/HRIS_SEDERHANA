@@ -9,6 +9,12 @@ use Illuminate\Support\Carbon;
 /** Spec §11 — sample daily-rate juru parkir. */
 class EmployeeSeeder extends Seeder
 {
+    /**
+     * The employee row behind the ADMIN login. Named here because UserSeeder
+     * links to it and must also keep it out of the per-employee login loop.
+     */
+    public const ADMIN_CODE = 'ADM001';
+
     public function run(): void
     {
         $employees = [
@@ -39,5 +45,22 @@ class EmployeeSeeder extends Seeder
                 ],
             );
         }
+
+        // The ADMIN login doubles as an attendance user: the check-in screen
+        // resolves its employee through users.employee_id, so the administrator
+        // needs a row of its own. Kept out of the sample list above because it
+        // is staff rather than a juru parkir, and on a zero daily rate so
+        // payroll does not invent wages for it.
+        Employee::updateOrCreate(
+            ['employee_code' => self::ADMIN_CODE],
+            [
+                'full_name' => 'Administrator',
+                'employment_status' => 'TETAP',
+                'employment_type' => 'DAILY',
+                'join_date' => Carbon::create(2026, 8, 1),
+                'daily_rate' => 0,
+                'status' => Employee::ACTIVE,
+            ],
+        );
     }
 }

@@ -12,6 +12,7 @@ use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -220,6 +221,53 @@ class AttendanceTest extends TestCase
             ->postJson(route('attendance.check-in'), $this->payload(metres: 10.5))
             ->assertStatus(422)
             ->assertJsonPath('code', 'OUT_OF_RADIUS');
+    }
+
+    /* ── Relaxed geofence (testing switch) ───────────────────────────── */
+
+    #[Test]
+    public function with_enforcement_off_a_distant_reading_is_accepted_but_still_measured(): void
+    {
+        config()->set('hris.enforce_geofence', false);
+
+        $this->actingAs($this->user)
+            ->postJson(route('attendance.check-in'), $this->payload(metres: 4000, accuracy: 900))
+            ->assertCreated();
+
+        $attendance = Attendance::first();
+
+        // The point of recording them anyway: the row still shows the check-in
+        // came from 4 km away, so relaxed data is identifiable afterwards.
+        $this->assertEqualsWithDelta(4000, (float) $attendance->check_in_distance, 5);
+        $this->assertEqualsWithDelta(900, (float) $attendance->check_in_accuracy, 0.1);
+    }
+
+    #[Test]
+    public function enforcement_off_does_not_revive_an_inactive_location(): void
+    {
+        config()->set('hris.enforce_geofence', false);
+        $this->location->update(['status' => Location::INACTIVE]);
+
+        $this->actingAs($this->user)
+            ->postJson(route('attendance.check-in'), $this->payload())
+            ->assertStatus(422)
+            ->assertJsonPath('code', 'LOCATION_INACTIVE');
+    }
+
+    #[Test]
+    public function the_check_in_screen_is_told_whether_the_geofence_is_enforced(): void
+    {
+        $this->actingAs($this->user)
+            ->getJson(route('attendance.index'))
+            ->assertOk()
+            ->assertJsonPath('data.enforce_geofence', true);
+
+        config()->set('hris.enforce_geofence', false);
+
+        $this->actingAs($this->user)
+            ->getJson(route('attendance.index'))
+            ->assertOk()
+            ->assertJsonPath('data.enforce_geofence', false);
     }
 
     /* ── AC-009 / AC-010 ─────────────────────────────────────────────── */
@@ -501,6 +549,103 @@ class AttendanceTest extends TestCase
             ->postJson(route('attendance.check-in'), $this->payload())
             ->assertStatus(422)
             ->assertJsonPath('code', 'LOCATION_INACTIVE');
+    }
+
+    /* ── Reverse-geocoded address ────────────────────────────────────── */
+
+    /**
+     * Puts a canned Nominatim response behind the geocoder and switches the
+     * lookup on, which phpunit.xml disables for every other test.
+     *
+     * @param  array<string, mixed>|null  $address  null makes the request fail
+     */
+    private function fakeGeocoder(?array $address): void
+    {
+        config()->set('hris.geocoding.enabled', true);
+
+        Http::fake([
+            '*nominatim*' => $address === null
+                ? Http::response(status: 503)
+                : Http::response(['address' => $address, 'display_name' => 'abaikan']),
+        ]);
+    }
+
+    #[Test]
+    public function check_in_stores_the_reverse_geocoded_address(): void
+    {
+        $this->fakeGeocoder([
+            'road' => 'Jalan M.H. Thamrin',
+            // Both keys belong to the same group, so only one may be used.
+            'village' => 'Gondangdia',
+            'suburb' => 'Gondangdia',
+            'city' => 'Jakarta Pusat',
+        ]);
+
+        $this->actingAs($this->user)
+            ->postJson(route('attendance.check-in'), $this->payload())
+            ->assertCreated()
+            ->assertJsonPath('data.check_in_address', 'Jalan M.H. Thamrin, Gondangdia, Jakarta Pusat');
+
+        $this->assertSame(
+            'Jalan M.H. Thamrin, Gondangdia, Jakarta Pusat',
+            Attendance::first()->check_in_address,
+        );
+    }
+
+    #[Test]
+    public function check_out_stores_its_own_address(): void
+    {
+        $this->fakeGeocoder(['road' => 'Jalan Kebon Sirih', 'city' => 'Jakarta Pusat']);
+
+        $this->actingAs($this->user)->postJson(route('attendance.check-in'), $this->payload());
+
+        Carbon::setTestNow(Carbon::create(2026, 8, 11, 14, 0));
+
+        $this->actingAs($this->user)
+            ->postJson(route('attendance.check-out'), $this->payload())
+            ->assertOk()
+            ->assertJsonPath('data.check_out_address', 'Jalan Kebon Sirih, Jakarta Pusat');
+    }
+
+    #[Test]
+    public function a_failing_geocoder_does_not_block_the_check_in(): void
+    {
+        $this->fakeGeocoder(null);
+
+        $this->actingAs($this->user)
+            ->postJson(route('attendance.check-in'), $this->payload())
+            ->assertCreated()
+            ->assertJsonPath('data.check_in_address', null);
+
+        // The attendance itself is unaffected: only the label is missing.
+        $this->assertDatabaseHas('attendances', [
+            'employee_id' => $this->employee->id,
+            'check_in_address' => null,
+            'status' => Attendance::INCOMPLETE,
+        ]);
+    }
+
+    #[Test]
+    public function the_geocode_endpoint_serves_the_check_in_screen(): void
+    {
+        $this->fakeGeocoder(['road' => 'Jalan Sudirman', 'city' => 'Jakarta Selatan']);
+
+        $this->actingAs($this->user)
+            ->getJson(route('attendance.geocode', [
+                'latitude' => $this->location->latitude,
+                'longitude' => $this->location->longitude,
+            ]))
+            ->assertOk()
+            ->assertJsonPath('data.address', 'Jalan Sudirman, Jakarta Selatan');
+    }
+
+    #[Test]
+    public function the_geocode_endpoint_rejects_coordinates_it_cannot_use(): void
+    {
+        $this->actingAs($this->user)
+            ->getJson(route('attendance.geocode', ['latitude' => 200, 'longitude' => 'utara']))
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['latitude', 'longitude']);
     }
 
     /* ── Photo access control ────────────────────────────────────────── */

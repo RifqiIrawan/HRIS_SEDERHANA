@@ -28,17 +28,15 @@
             return value === null || value === undefined ? '−' : HRIS.formatNumber(value, 1) + ' m';
         }
 
-        function photoCell(item) {
+        function detailCell(item) {
             var photos = item.photos || {};
+            var hasPhoto = !!(photos.CHECK_IN || photos.CHECK_OUT);
 
-            if (!photos.CHECK_IN && !photos.CHECK_OUT) {
-                return '<span class="text-body-secondary">−</span>';
-            }
-
-            return '<button class="btn btn-sm btn-outline-secondary js-photo" ' +
-                'data-in="' + HRIS.esc(photos.CHECK_IN || '') + '" ' +
-                'data-out="' + HRIS.esc(photos.CHECK_OUT || '') + '" title="Lihat foto">' +
-                '<i class="bi bi-image"></i></button>';
+            // The icon still says at a glance whether the row carries photos,
+            // but every row can be opened — the readings behind a row without a
+            // photo are exactly the ones worth inspecting.
+            return '<button class="btn btn-sm btn-outline-secondary js-detail" title="Lihat detail">' +
+                '<i class="bi bi-' + (hasPhoto ? 'image' : 'eye') + '"></i></button>';
         }
 
         /* Column order must match the <thead> in the history and monitoring
@@ -74,7 +72,19 @@
                 data: 'location_name',
                 orderable: false,
                 className: 'small',
-                render: function (value) { return HRIS.esc(value || '−'); }
+                // The reverse-geocoded address rides under the location name
+                // rather than in a column of its own: it is long, often absent,
+                // and only ever read as context for the row it belongs to.
+                render: function (value, type, row) {
+                    var name = HRIS.esc(value || '−');
+
+                    if (!row.check_in_address) {
+                        return name;
+                    }
+
+                    return name + '<div class="text-body-secondary" style="font-size:.72rem">' +
+                        '<i class="bi bi-geo-alt me-1"></i>' + HRIS.esc(row.check_in_address) + '</div>';
+                }
             },
             {
                 data: 'check_in_at',
@@ -101,7 +111,7 @@
                 data: null,
                 orderable: false,
                 className: 'text-center',
-                render: photoCell
+                render: detailCell
             }
         );
 
@@ -136,19 +146,123 @@
             }
         });
 
-        $('#dataTable').on('click', '.js-photo', function () {
+        /* ── Detail modal ───────────────────────────────────────────── */
+
+        function field(name) {
+            return $('#photoModal [data-detail="' + name + '"]');
+        }
+
+        function text(name, value) {
+            field(name).text(value === null || value === undefined || value === '' ? '−' : value);
+        }
+
+        /** Secondary sub-line: absent means empty, not a dash. */
+        function hint(name, value) {
+            field(name).text(value === null || value === undefined ? '' : value);
+        }
+
+        /** Working time between the two stamps, as "7 j 25 mnt". */
+        function worked(from, to) {
+            if (!from || !to) return '';
+
+            var minutes = Math.round(
+                (new Date(to.replace(' ', 'T')) - new Date(from.replace(' ', 'T'))) / 60000
+            );
+
+            if (isNaN(minutes) || minutes < 0) return '';
+
+            return 'Durasi ' + Math.floor(minutes / 60) + ' j ' + (minutes % 60) + ' mnt';
+        }
+
+        /** One of the two check-in / check-out panels, from the listing row. */
+        function fillSide(side, row, photoUrl) {
+            var prefix = side === 'in' ? 'check_in_' : 'check_out_';
+            var stamp = row[prefix + 'at'];
+
+            // A cross-day shift checks out on the following calendar day, so the
+            // date is spelled out whenever it is not the attendance date itself.
+            text(side + '.time', stamp
+                ? (stamp.slice(0, 10) === row.attendance_date ? '' : HRIS.formatDate(stamp) + ' ') + HRIS.formatTime(stamp)
+                : '−');
+            text(side + '.distance', metre(row[prefix + 'distance']));
+            text(side + '.accuracy', metre(row[prefix + 'accuracy']));
+            text(side + '.address', row[prefix + 'address']);
+            // Filled once the detail response lands; the listing has no coordinates.
+            text(side + '.coordinates', '…');
+
+            field(side + '.photo')
+                .attr('src', photoUrl || '')
+                .toggleClass('d-none', !photoUrl);
+            field(side + '.photo_empty').toggleClass('d-none', !!photoUrl);
+        }
+
+        function fillCoordinates(side, latitude, longitude) {
+            var $cell = field(side + '.coordinates');
+
+            if (latitude === null || latitude === undefined || longitude === null || longitude === undefined) {
+                $cell.text('−');
+                return;
+            }
+
+            var pair = Number(latitude).toFixed(6) + ', ' + Number(longitude).toFixed(6);
+
+            $cell.html(
+                '<a href="https://www.google.com/maps?q=' + encodeURIComponent(latitude + ',' + longitude) + '" ' +
+                'target="_blank" rel="noopener" title="Buka di Google Maps">' + HRIS.esc(pair) +
+                ' <i class="bi bi-box-arrow-up-right"></i></a>'
+            );
+        }
+
+        // Guards against a slow response for a row the user has already left.
+        var detailRequestId = null;
+
+        $('#dataTable').on('click', '.js-detail', function () {
             if (!photoModal) return;
 
-            var checkIn = $(this).data('in');
-            var checkOut = $(this).data('out');
+            var row = list.table.row($(this).closest('tr')).data();
+            if (!row) return;
 
-            $('#photoCheckIn').attr('src', checkIn || '').toggleClass('d-none', !checkIn);
-            $('#photoCheckInEmpty').toggleClass('d-none', !!checkIn);
+            var photos = row.photos || {};
 
-            $('#photoCheckOut').attr('src', checkOut || '').toggleClass('d-none', !checkOut);
-            $('#photoCheckOutEmpty').toggleClass('d-none', !!checkOut);
+            text('date', HRIS.formatDate(row.attendance_date));
+            text('employee_name', row.employee_name);
+            hint('employee_code', row.employee_code);
+            $('#photoModal [data-detail-block="employee"]').toggleClass('d-none', !showEmployee);
+
+            text('shift_code', row.shift_code);
+            hint('shift_name', row.shift_name);
+            text('location_name', row.location_name);
+            hint('radius', '');
+
+            field('status').html(HRIS.statusBadge(row.status));
+            hint('duration', worked(row.check_in_at, row.check_out_at));
+
+            fillSide('in', row, photos.CHECK_IN);
+            fillSide('out', row, photos.CHECK_OUT);
 
             photoModal.show();
+
+            // Coordinates and the geofence radius only exist on the detail
+            // endpoint, which the listing deliberately does not carry.
+            detailRequestId = row.id;
+
+            HRIS.api({ url: window.HRIS_URLS.detail + '/' + row.id })
+                .done(function (detail) {
+                    if (detailRequestId !== row.id) return;
+
+                    fillCoordinates('in', detail.check_in_latitude, detail.check_in_longitude);
+                    fillCoordinates('out', detail.check_out_latitude, detail.check_out_longitude);
+
+                    hint('radius', detail.location
+                        ? 'Radius ' + HRIS.formatNumber(detail.location.radius_meter) + ' m'
+                        : '');
+                })
+                .fail(function () {
+                    if (detailRequestId !== row.id) return;
+
+                    text('in.coordinates', '−');
+                    text('out.coordinates', '−');
+                });
         });
 
         return list;

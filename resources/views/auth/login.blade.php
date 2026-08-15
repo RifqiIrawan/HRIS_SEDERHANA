@@ -58,6 +58,13 @@
         <p class="small text-body-secondary mb-0">Absensi GPS &amp; Payroll Harian</p>
     </div>
 
+    @php
+        // Dev convenience: the seeder's ADMIN account is pre-filled so the form can be
+        // submitted straight away. Guarded to `local` — never pre-fill in production.
+        $demoEmail = app()->environment('local') ? 'admin@hris.test' : '';
+        $demoPassword = app()->environment('local') ? 'password' : '';
+    @endphp
+
     <div class="card">
         <div class="card-body p-4">
             <form id="loginForm" novalidate>
@@ -66,6 +73,7 @@
                     <div class="input-group">
                         <span class="input-group-text"><i class="bi bi-envelope"></i></span>
                         <input type="email" class="form-control" id="email" name="email"
+                               value="{{ $demoEmail }}"
                                autocomplete="username" required autofocus>
                     </div>
                 </div>
@@ -75,6 +83,7 @@
                     <div class="input-group">
                         <span class="input-group-text"><i class="bi bi-lock"></i></span>
                         <input type="password" class="form-control" id="password" name="password"
+                               value="{{ $demoPassword }}"
                                autocomplete="current-password" required>
                         <button class="btn btn-outline-secondary" type="button" id="togglePassword"
                                 aria-label="Tampilkan password">

@@ -16,6 +16,12 @@
                 if (saved === 'dark' || saved === 'light') {
                     document.documentElement.setAttribute('data-bs-theme', saved);
                 }
+                // Sidebar state rides on <html> for the same reason as the theme: it is
+                // the only element that exists this early, so the collapsed layout is in
+                // place before the first paint instead of snapping shut after it.
+                if (localStorage.getItem('hris-sidebar') === 'collapsed') {
+                    document.documentElement.classList.add('sidebar-collapsed');
+                }
             } catch (e) { /* private mode — the default theme is fine */ }
         })();
     </script>

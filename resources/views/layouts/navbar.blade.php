@@ -2,12 +2,19 @@
 
 <nav class="app-navbar navbar bg-body border-bottom sticky-top">
     <div class="container-fluid px-3 px-lg-4">
+        {{-- Two buttons, one job: below lg the sidebar is a Bootstrap offcanvas, at lg
+             and up it is a static column that only CSS can hide. --}}
         <button class="btn btn-outline-secondary d-lg-none" type="button"
                 data-bs-toggle="offcanvas" data-bs-target="#appSidebar" aria-label="Buka menu">
             <i class="bi bi-list"></i>
         </button>
 
-        <span class="navbar-text d-none d-lg-block text-body-secondary small">
+        <button class="btn btn-outline-secondary d-none d-lg-inline-flex js-sidebar-toggle" type="button"
+                aria-label="Sembunyikan atau tampilkan menu" title="Sembunyikan/tampilkan menu">
+            <i class="bi bi-list"></i>
+        </button>
+
+        <span class="navbar-text navbar-date d-none d-lg-block text-body-secondary small ms-3">
             <i class="bi bi-calendar3 me-1"></i>{{ now()->translatedFormat('l, d F Y') }}
         </span>
 

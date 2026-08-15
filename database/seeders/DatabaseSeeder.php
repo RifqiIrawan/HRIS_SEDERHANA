@@ -18,6 +18,8 @@ class DatabaseSeeder extends Seeder
     {
         $this->call([
             RoleSeeder::class,
+            // After roles: the menu registry maps onto them.
+            MenuSeeder::class,
             ShiftSeeder::class,
             LocationSeeder::class,
             EmployeeSeeder::class,

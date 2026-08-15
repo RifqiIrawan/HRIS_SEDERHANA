@@ -31,6 +31,19 @@
         -->
         <env name="DB_CONNECTION" value="mysql"/>
         <env name="DB_DATABASE" value="hris_juru_parkir_test"/>
+        <!--
+            Pinned so a local .env relaxed for manual testing cannot silently
+            disarm the geofence assertions (AC-006 … AC-008). A test that wants
+            the relaxed behaviour sets the config itself.
+        -->
+        <env name="HRIS_ENFORCE_GEOFENCE" value="true"/>
+        <!--
+            Reverse geocoding calls a third-party service. The suite must not
+            depend on the network being up (nor hammer a rate-limited public
+            endpoint), so it is off unless a test switches it on and fakes the
+            HTTP client.
+        -->
+        <env name="HRIS_GEOCODING_ENABLED" value="false"/>
         <env name="HRIS_SEED_DEMO" value="false"/>
         <env name="MAIL_MAILER" value="array"/>
         <env name="PULSE_ENABLED" value="false"/>

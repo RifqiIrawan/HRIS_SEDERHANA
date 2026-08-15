@@ -3,6 +3,7 @@
 use App\Exceptions\BusinessRuleException;
 use App\Http\Middleware\DataTableRequest;
 use App\Http\Middleware\EnsureUserIsActive;
+use App\Http\Middleware\MenuAccessMiddleware;
 use App\Http\Middleware\RoleMiddleware;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Foundation\Application;
@@ -28,6 +29,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'role' => RoleMiddleware::class,
             'active' => EnsureUserIsActive::class,
+            'menu' => MenuAccessMiddleware::class,
         ]);
 
         $middleware->redirectGuestsTo(fn () => route('login'));

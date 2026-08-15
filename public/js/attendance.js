@@ -25,9 +25,13 @@ jQuery(function ($) {
     var userMarker = null;
     var accuracyCircle = null;
 
+    var addressRequest = null;   // in-flight reverse-geocode lookup
+    var addressAnchor = null;    // coords the shown address was resolved for
+
     var $accuracy = $('#readoutAccuracy');
     var $distance = $('#readoutDistance');
     var $status = $('#readoutStatus');
+    var $address = $('#readoutAddress');
     var $hint = $('#gpsHint');
     var $checkIn = $('#checkInButton');
     var $checkOut = $('#checkOutButton');
@@ -88,6 +92,11 @@ jQuery(function ($) {
 
         $('#stateAlert').addClass('d-none');
         $('#attendancePanel').removeClass('d-none');
+
+        // Deliberately loud and unconditional: an open geofence is a testing
+        // configuration, and nobody should reach this screen in that state
+        // without being told.
+        $('#geofenceWarning').toggleClass('d-none', enforcesGeofence());
 
         var isCheckOut = context.state === 'AWAITING_CHECK_OUT';
 
@@ -207,9 +216,11 @@ jQuery(function ($) {
                 position = pos.coords;
                 updateUserMarker(pos.coords);
                 updateReadout();
+                refreshAddress();
             },
             function (error) {
                 position = null;
+                clearAddress();
                 updateReadout();
 
                 var messages = {
@@ -266,17 +277,28 @@ jQuery(function ($) {
         $distance.text(distance.toFixed(1) + ' m')
             .attr('class', 'readout-value ' + (withinRadius ? 'text-success' : 'text-danger'));
 
+        // With enforcement off the readings are still shown and still coloured
+        // against the thresholds — they just no longer stop a submit, and the
+        // hint says which of the two situations the employee is in.
+        var relaxed = !enforcesGeofence();
+
         if (!accuracyOk) {
             $status.html('<span class="text-danger">AKURASI RENDAH</span>');
             $hint.attr('class', 'alert alert-warning small mt-3 mb-0').text(
                 'GPS kurang akurat (' + accuracy.toFixed(1) + ' m, batas ' +
-                context.location.gps_accuracy_limit + ' m). Silakan coba kembali di area terbuka.'
+                context.location.gps_accuracy_limit + ' m). ' +
+                (relaxed
+                    ? 'Penegakan geofence sedang dinonaktifkan, absensi tetap dapat dikirim.'
+                    : 'Silakan coba kembali di area terbuka.')
             );
         } else if (!withinRadius) {
             $status.html('<span class="text-danger">DI LUAR RADIUS</span>');
             $hint.attr('class', 'alert alert-warning small mt-3 mb-0').text(
                 'Anda berada ' + distance.toFixed(1) + ' m dari titik lokasi (maksimal ' +
-                context.location.radius_meter + ' m). Mendekatlah ke titik absensi.'
+                context.location.radius_meter + ' m). ' +
+                (relaxed
+                    ? 'Penegakan geofence sedang dinonaktifkan, absensi tetap dapat dikirim.'
+                    : 'Mendekatlah ke titik absensi.')
             );
         } else {
             $status.html('<span class="text-success">VALID</span>');
@@ -288,19 +310,89 @@ jQuery(function ($) {
         refreshActionButtons();
     }
 
+    /* ─────────────────────────────────────────────────────────────────
+     * Reverse geocoding — the address behind the current reading
+     * ───────────────────────────────────────────────────────────────── */
+
+    /**
+     * Shown for the employee's benefit so they can confirm the device is
+     * reporting the right place. It is never submitted: the check-in request
+     * carries coordinates only, and Laravel resolves the address it stores
+     * from those, so a tampered display cannot reach the database.
+     *
+     * watchPosition fires continuously, so a lookup only goes out when the
+     * reading has actually moved — the provider is rate-limited and the answer
+     * would not change over a few metres of GPS jitter.
+     */
+    function refreshAddress() {
+        if (!position || !window.HRIS_URLS.geocode) return;
+
+        if (addressAnchor && calculateDisplayDistance(
+            addressAnchor.latitude, addressAnchor.longitude,
+            position.latitude, position.longitude
+        ) < 25) {
+            return;
+        }
+
+        if (addressRequest) return;
+
+        var coords = { latitude: position.latitude, longitude: position.longitude };
+
+        $address.html('<span class="text-body-secondary">Mencari alamat…</span>');
+
+        addressRequest = HRIS.api({
+            url: window.HRIS_URLS.geocode,
+            data: { latitude: coords.latitude, longitude: coords.longitude }
+        })
+            .done(function (data) {
+                addressAnchor = coords;
+
+                $address.text(data.address || 'Alamat tidak ditemukan untuk titik ini.')
+                    .toggleClass('text-body-secondary', !data.address);
+            })
+            .fail(function () {
+                // The lookup is optional; a failure must not read as an error
+                // the employee has to act on.
+                $address.html('<span class="text-body-secondary">Alamat tidak tersedia.</span>');
+            })
+            .always(function () {
+                addressRequest = null;
+            });
+    }
+
+    function clearAddress() {
+        addressAnchor = null;
+        $address.text('—').addClass('text-body-secondary');
+    }
+
     /**
      * The button is a convenience gate only — a stale reading that slips past
      * it still gets rejected by the backend, which is the actual guarantee.
      */
     function refreshActionButtons() {
         var ready = !!position && !!photoBlob && !!context.location &&
-            position.accuracy <= context.location.gps_accuracy_limit;
+            (!enforcesGeofence() || position.accuracy <= context.location.gps_accuracy_limit);
 
         $checkIn.prop('disabled', !ready);
         $checkOut.prop('disabled', !ready);
     }
 
-    $('#refreshGps').on('click', getCurrentLocation);
+    /**
+     * The server tells the page whether it is enforcing distance and accuracy.
+     * When it is not, holding the button shut on accuracy would block a submit
+     * the backend would have accepted. Absent flag means enforced — an older
+     * response must never be read as permission.
+     */
+    function enforcesGeofence() {
+        return !context || context.enforce_geofence !== false;
+    }
+
+    // An explicit refresh means "re-read everything", so the address is looked
+    // up again even if the device has not moved.
+    $('#refreshGps').on('click', function () {
+        clearAddress();
+        getCurrentLocation();
+    });
 
     /* ─────────────────────────────────────────────────────────────────
      * Camera (spec §25)
@@ -510,9 +602,11 @@ jQuery(function ($) {
                 ? HRIS.formatNumber(attendance.check_in_distance, 2) + ' m' : '−'],
             ['Akurasi Check-In', attendance.check_in_accuracy !== null && attendance.check_in_accuracy !== undefined
                 ? HRIS.formatNumber(attendance.check_in_accuracy, 2) + ' m' : '−'],
+            ['Alamat Check-In', attendance.check_in_address || '−'],
             ['Check-Out', attendance.check_out_at ? HRIS.formatTime(attendance.check_out_at) : '−'],
             ['Jarak Check-Out', attendance.check_out_distance !== null && attendance.check_out_distance !== undefined
                 ? HRIS.formatNumber(attendance.check_out_distance, 2) + ' m' : '−'],
+            ['Alamat Check-Out', attendance.check_out_address || '−'],
             ['Keterlambatan', attendance.late_minutes ? attendance.late_minutes + ' menit' : 'Tepat waktu'],
             ['Status', HRIS.statusBadge(attendance.status)]
         ];

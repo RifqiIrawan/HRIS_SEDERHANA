@@ -9,6 +9,8 @@ use App\Models\AttendancePhoto;
 use App\Models\Employee;
 use App\Models\ShiftRoster;
 use App\Services\AttendanceService;
+use App\Services\GeocodingService;
+use App\Services\GeofenceService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -55,6 +57,27 @@ class AttendanceController extends Controller
         }
 
         return $this->ok($this->contextPayload($context));
+    }
+
+    /**
+     * The address behind a live GPS reading, for the check-in screen's own
+     * display. It is a convenience lookup only: what actually gets stored is
+     * resolved again server-side from the coordinates the check-in submits, so
+     * nothing here can influence the recorded address.
+     */
+    public function geocode(Request $request, GeocodingService $geocoder): JsonResponse
+    {
+        $validated = $request->validate([
+            'latitude' => ['required', 'numeric', 'between:-90,90'],
+            'longitude' => ['required', 'numeric', 'between:-180,180'],
+        ]);
+
+        return $this->ok([
+            'address' => $geocoder->reverseGeocode(
+                (float) $validated['latitude'],
+                (float) $validated['longitude'],
+            ),
+        ]);
     }
 
     public function checkIn(AttendanceRequest $request): JsonResponse
@@ -240,6 +263,9 @@ class AttendanceController extends Controller
         return [
             'state' => $context['state'],
             'server_time' => Carbon::now()->format('Y-m-d H:i:s'),
+            // Lets the screen unlock its own accuracy gate — and say why — when
+            // the server is not enforcing one either.
+            'enforce_geofence' => GeofenceService::isEnforced(),
             'roster' => $roster ? [
                 'id' => $roster->id,
                 'date' => $roster->roster_date->toDateString(),
@@ -282,9 +308,11 @@ class AttendanceController extends Controller
             'check_in_at' => $attendance->check_in_at?->format('Y-m-d H:i:s'),
             'check_in_distance' => $attendance->check_in_distance,
             'check_in_accuracy' => $attendance->check_in_accuracy,
+            'check_in_address' => $attendance->check_in_address,
             'check_out_at' => $attendance->check_out_at?->format('Y-m-d H:i:s'),
             'check_out_distance' => $attendance->check_out_distance,
             'check_out_accuracy' => $attendance->check_out_accuracy,
+            'check_out_address' => $attendance->check_out_address,
             'late_minutes' => $attendance->late_minutes,
             'status' => $attendance->status,
             'photos' => $attendance->relationLoaded('photos')

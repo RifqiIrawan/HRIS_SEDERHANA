@@ -4,9 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\RoleRequest;
 use App\Models\AuditLog;
+use App\Models\Menu;
 use App\Models\Role;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 /** Spec §10. */
@@ -15,7 +17,10 @@ class RoleController extends Controller
     public function index(Request $request): View|JsonResponse
     {
         if (! $this->wantsData($request)) {
-            return view('roles.index');
+            return view('roles.index', [
+                'accessRoles' => $this->accessRoles(),
+                'accessMenus' => $this->accessMenus(),
+            ]);
         }
 
         $roles = Role::query()
@@ -83,6 +88,79 @@ class RoleController extends Controller
         AuditLog::record('role.deleted', null, 'Role '.$code.' dihapus');
 
         return $this->ok(message: 'Role berhasil dihapus.');
+    }
+
+    /** The matrix as data, for a client that would rather rebuild it than reload. */
+    public function menuAccess(): JsonResponse
+    {
+        return $this->ok([
+            'roles' => $this->accessRoles(),
+            'menus' => $this->accessMenus(),
+        ]);
+    }
+
+    /**
+     * Replaces the whole mapping in one transaction.
+     *
+     * The form posts the complete matrix, so an absent pair is a revocation —
+     * saving a partial payload would silently keep access the administrator had
+     * just unticked.
+     */
+    public function updateMenuAccess(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'access' => ['present', 'array'],
+            'access.*' => ['array'],
+            'access.*.*' => ['integer', 'exists:roles,id'],
+        ]);
+
+        $submitted = $validated['access'];
+        $adminRoleId = Role::where('role_code', Role::ADMIN)->value('id');
+        $menus = Menu::all();
+
+        DB::transaction(function () use ($menus, $submitted, $adminRoleId) {
+            foreach ($menus as $menu) {
+                $roleIds = array_values(array_unique(
+                    array_map('intval', $submitted[$menu->id] ?? []),
+                ));
+
+                // A locked menu keeps ADMIN whatever the form said. User and Role
+                // are the only screens that can hand access back, so letting them
+                // be unmapped would be an unrecoverable lockout.
+                if ($menu->is_locked && $adminRoleId && ! in_array($adminRoleId, $roleIds, true)) {
+                    $roleIds[] = $adminRoleId;
+                }
+
+                $menu->roles()->sync($roleIds);
+            }
+        });
+
+        AuditLog::record('menu_access.updated', null, 'Pemetaan akses menu diperbarui');
+
+        return $this->ok(message: 'Akses menu berhasil disimpan.');
+    }
+
+    /** @return \Illuminate\Support\Collection<int, array<string, mixed>> */
+    private function accessRoles()
+    {
+        return Role::orderBy('role_code')->get()->map(fn (Role $role) => [
+            'id' => $role->id,
+            'role_code' => $role->role_code,
+            'role_name' => $role->role_name,
+        ]);
+    }
+
+    /** @return \Illuminate\Support\Collection<int, array<string, mixed>> */
+    private function accessMenus()
+    {
+        return Menu::with('roles:id')->orderBy('sort_order')->get()->map(fn (Menu $menu) => [
+            'id' => $menu->id,
+            'menu_code' => $menu->menu_code,
+            'menu_name' => $menu->menu_name,
+            'group_name' => $menu->group_name,
+            'is_locked' => $menu->is_locked,
+            'role_ids' => $menu->roles->pluck('id')->all(),
+        ]);
     }
 
     /**

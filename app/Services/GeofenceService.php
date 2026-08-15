@@ -43,6 +43,16 @@ class GeofenceService
     }
 
     /**
+     * Whether distance and accuracy are being enforced (spec §23), or merely
+     * measured and recorded. Exposed so the check-in screen can warn that the
+     * gate is open rather than silently accepting anything.
+     */
+    public static function isEnforced(): bool
+    {
+        return (bool) config('hris.enforce_geofence', true);
+    }
+
+    /**
      * Decide whether a reading may be accepted for this location.
      *
      * Both thresholds come from the location row, so a site with a bigger
@@ -81,6 +91,14 @@ class GeofenceService
 
         if (! $location->isActive()) {
             return [...$result, 'code' => self::LOCATION_INACTIVE, 'message' => 'Lokasi absensi sedang tidak aktif.'];
+        }
+
+        // An inactive location is still refused above: that is a data state,
+        // not a measurement, and switching enforcement off is about not
+        // rejecting readings. Distance and accuracy stay recorded either way,
+        // so the audit trail shows where the relaxed check-ins came from.
+        if (! self::isEnforced()) {
+            return [...$result, 'valid' => true, 'message' => 'Lokasi diterima (penegakan geofence dinonaktifkan).'];
         }
 
         // Spec §22 — a reading the device itself cannot vouch for is refused
