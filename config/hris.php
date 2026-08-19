@@ -35,17 +35,31 @@ return [
     | Shift & attendance windows
     |--------------------------------------------------------------------------
     |
-    | Spec §34 for the late threshold. The check-in window lets an employee
-    | clock in before the shift officially starts; the check-out grace lets
-    | them clock out after it ends (important for the cross-day shift 3).
+    | Spec §34 for the late threshold. The rest bound the two actions on either
+    | side, which is what stops a shift being opened or closed at a time that
+    | cannot plausibly belong to it.
+    |
+    | Check-in is allowed from `checkin_early_window_minutes` before the shift
+    | starts until `checkin_late_window_minutes` after it. Check-out is allowed
+    | from `checkout_early_window_minutes` before the shift ends until
+    | `checkout_grace_minutes` after it — the grace matters most for the
+    | cross-day night shift, which ends the following morning.
+    |
+    | The check-in window still closes at the shift's own end when that comes
+    | first, so a shift shorter than the late window cannot be opened after it
+    | is already over.
     |
     */
 
     'default_late_tolerance_minutes' => (int) env('HRIS_DEFAULT_LATE_TOLERANCE_MINUTES', 15),
 
-    'checkin_early_window_minutes' => (int) env('HRIS_CHECKIN_EARLY_WINDOW_MINUTES', 120),
+    'checkin_early_window_minutes' => (int) env('HRIS_CHECKIN_EARLY_WINDOW_MINUTES', 240),
 
-    'checkout_grace_minutes' => (int) env('HRIS_CHECKOUT_GRACE_MINUTES', 180),
+    'checkin_late_window_minutes' => (int) env('HRIS_CHECKIN_LATE_WINDOW_MINUTES', 240),
+
+    'checkout_early_window_minutes' => (int) env('HRIS_CHECKOUT_EARLY_WINDOW_MINUTES', 240),
+
+    'checkout_grace_minutes' => (int) env('HRIS_CHECKOUT_GRACE_MINUTES', 420),
 
     /*
     |--------------------------------------------------------------------------

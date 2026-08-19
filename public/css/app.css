@@ -425,6 +425,23 @@ h1, h2, h3, h4, h5, h6 {
     border-color: var(--line);
 }
 
+/* Every form modal in the app wraps its header, body and footer in a <form>,
+   and that wrapper silently breaks .modal-dialog-scrollable: Bootstrap caps
+   .modal-content and hides its overflow, expecting .modal-body to be a flex
+   child it can shrink. A plain block in between takes its natural height
+   instead, so the body never gets a height to scroll within — the content is
+   simply clipped and the footer becomes unreachable.
+
+   Giving the wrapper the column layout .modal-content would have had puts the
+   scroll back where Bootstrap expects it. Scoped to scrollable dialogs so a
+   plain modal still sizes to its content. */
+.modal-dialog-scrollable .modal-content > form {
+    display: flex;
+    flex-direction: column;
+    max-height: 100%;
+    overflow: hidden;
+}
+
 .dropdown-menu {
     border: 1px solid var(--line);
     border-radius: var(--radius-md);

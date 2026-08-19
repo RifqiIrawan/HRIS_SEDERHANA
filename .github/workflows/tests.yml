@@ -3,7 +3,7 @@ name: Tests
 on:
   push:
     branches:
-      - master
+      - main
       - '*.x'
   pull_request:
   schedule:
@@ -15,6 +15,27 @@ permissions:
 jobs:
   tests:
     runs-on: ubuntu-latest
+
+    # phpunit.xml pins the suite to MySQL rather than an in-memory SQLite file,
+    # because the schema leans on MySQL behaviour the suite actually asserts
+    # against — nullOnDelete on attendances.roster_id, and the unique index that
+    # is the real duplicate guard for two check-ins racing each other. Without a
+    # server here every test errors on connect before it runs.
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_DATABASE: hris_juru_parkir_test
+          MYSQL_ALLOW_EMPTY_PASSWORD: true
+        ports:
+          - 3306:3306
+        # The job must not start migrating before the server accepts
+        # connections; mysql reports ready some seconds after the container is.
+        options: >-
+          --health-cmd="mysqladmin ping --silent"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
 
     strategy:
       fail-fast: true
@@ -31,7 +52,7 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ matrix.php }}
-          extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, sqlite, pdo_sqlite
+          extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, mysql, pdo_mysql
           coverage: none
 
       - name: Install Composer dependencies
@@ -44,4 +65,9 @@ jobs:
         run: php artisan key:generate
 
       - name: Execute tests
+        env:
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_USERNAME: root
+          DB_PASSWORD: ''
         run: vendor/bin/phpunit

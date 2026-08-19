@@ -103,16 +103,47 @@ jQuery(function ($) {
         $checkIn.toggleClass('d-none', isCheckOut);
         $checkOut.toggleClass('d-none', !isCheckOut);
 
-        $('#actionHint').text(isCheckOut
-            ? 'Anda sudah check-in. Ambil foto dan pastikan GPS akurat untuk check-out.'
-            : (roster && roster.late_threshold
-                ? 'Batas tepat waktu: ' + roster.late_threshold + '. Lewat dari itu tercatat TERLAMBAT.'
-                : ''));
+        $('#actionHint').text(actionHint(isCheckOut, roster));
 
         renderResult(context.attendance);
 
         initializeMap();
         getCurrentLocation();
+    }
+
+    /**
+     * What the employee needs to know before pressing the button — including
+     * when the action they are looking at actually becomes possible. The server
+     * enforces these bounds either way; saying them out loud is what stops a
+     * refusal being the first time anyone hears about them.
+     */
+    function actionHint(isCheckOut, roster) {
+        if (!roster) return '';
+
+        if (isCheckOut) {
+            var parts = ['Anda sudah check-in.'];
+
+            if (roster.checkout_opens) {
+                parts.push('Check-out bisa dilakukan mulai ' + roster.checkout_opens +
+                    (roster.checkout_closes ? ' sampai ' + roster.checkout_closes : '') + '.');
+            }
+
+            parts.push('Ambil foto dan pastikan GPS akurat.');
+
+            return parts.join(' ');
+        }
+
+        var hint = [];
+
+        if (roster.late_threshold) {
+            hint.push('Batas tepat waktu: ' + roster.late_threshold + '. Lewat dari itu tercatat TERLAMBAT.');
+        }
+
+        if (roster.checkin_closes) {
+            hint.push('Check-in ditutup pukul ' + roster.checkin_closes + '.');
+        }
+
+        return hint.join(' ');
     }
 
     function showState(variant, message) {

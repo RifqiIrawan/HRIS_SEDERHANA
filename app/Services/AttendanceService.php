@@ -11,6 +11,7 @@ use App\Models\ShiftRoster;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -101,7 +102,7 @@ class AttendanceService
 
         try {
             return DB::transaction(function () use (
-                $employee, $roster, $location, $latitude, $longitude, $accuracy, $verdict, $photo, $now, $lateMinutes, $address
+                $employee, $roster, $location, $latitude, $longitude, $verdict, $photo, $now, $lateMinutes, $address
             ) {
                 $attendance = Attendance::create([
                     'employee_id' => $employee->id,
@@ -165,6 +166,12 @@ class AttendanceService
 
         if (! $attendance) {
             throw AttendanceException::noOpenAttendance();
+        }
+
+        $opensAt = $this->checkOutOpensAt($attendance);
+
+        if ($now->lessThan($opensAt)) {
+            throw AttendanceException::checkOutTooEarly($opensAt->format('H:i'));
         }
 
         if ($now->greaterThan($this->checkOutDeadline($attendance))) {
@@ -259,20 +266,29 @@ class AttendanceService
      * Rosters whose check-in window is open right now, earliest first.
      *
      * The window opens `checkin_early_window_minutes` before the shift starts
-     * and closes when the shift ends. Because start/end are stored as absolute
-     * datetimes (spec §17), the cross-day shift 3 is matched by the same query
-     * as any other — no special-casing on roster_date.
+     * and closes `checkin_late_window_minutes` after it — or at the shift's own
+     * end, whichever comes first, so a shift shorter than the late window
+     * cannot be opened once it is already over. Both bounds are kept as
+     * separate conditions, which gives that "whichever comes first" for free.
      *
-     * @return \Illuminate\Support\Collection<int, ShiftRoster>
+     * Because start/end are stored as absolute datetimes (spec §17), the
+     * cross-day shift 3 is matched by the same query as any other — no
+     * special-casing on roster_date.
+     *
+     * @return Collection<int, ShiftRoster>
      */
     private function rosterCandidates(Employee $employee, Carbon $now)
     {
         $earlyWindow = (int) config('hris.checkin_early_window_minutes');
+        $lateWindow = (int) config('hris.checkin_late_window_minutes');
 
-        // "now >= start - window" is rearranged to "start <= now + window" so
-        // the comparison is against a plain column: it uses the index on
-        // start_datetime and needs no vendor-specific date arithmetic.
+        // Both comparisons are rearranged to put the column on one side —
+        // "now >= start - early" becomes "start <= now + early", and
+        // "now <= start + late" becomes "start >= now - late". That keeps the
+        // index on start_datetime usable and avoids vendor-specific date
+        // arithmetic in the query.
         $opensBy = $now->copy()->addMinutes($earlyWindow);
+        $closedBefore = $now->copy()->subMinutes($lateWindow);
 
         return ShiftRoster::with(['shift', 'location', 'attendance'])
             ->scheduled()
@@ -280,6 +296,7 @@ class AttendanceService
             ->whereNotNull('start_datetime')
             ->whereNotNull('end_datetime')
             ->where('start_datetime', '<=', $opensBy)
+            ->where('start_datetime', '>=', $closedBefore)
             ->where('end_datetime', '>=', $now)
             ->orderBy('start_datetime')
             ->get();
@@ -288,6 +305,28 @@ class AttendanceService
     private function hasAttendance(ShiftRoster $roster): bool
     {
         return $roster->attendance !== null;
+    }
+
+    /**
+     * The earliest a shift may be closed: `checkout_early_window_minutes`
+     * before it is due to end. Without a floor, an employee could check in and
+     * check out a minute later and still bank a full working day.
+     *
+     * Never earlier than the check-in itself, so the floor can only ever delay
+     * a check-out — it cannot make one that already happened look premature.
+     */
+    private function checkOutOpensAt(Attendance $attendance): Carbon
+    {
+        $early = (int) config('hris.checkout_early_window_minutes');
+        $end = $attendance->roster?->end_datetime;
+
+        if (! $end) {
+            return $attendance->check_in_at->copy();
+        }
+
+        $opensAt = $end->copy()->subMinutes($early);
+
+        return $opensAt->lessThan($attendance->check_in_at) ? $attendance->check_in_at->copy() : $opensAt;
     }
 
     /**
