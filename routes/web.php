@@ -124,6 +124,24 @@ Route::middleware(['auth', 'active', 'menu'])->group(function () {
 
     Route::get('/assignments', [AssignmentController::class, 'index'])->name('assignments.index');
     Route::post('/assignments', [AssignmentController::class, 'store'])->name('assignments.store');
+
+    // Rotating-shift generator. Declared before /assignments/{assignment} so
+    // the wildcard cannot swallow "rotation".
+    Route::post('/assignments/rotation/preview', [AssignmentController::class, 'rotationPreview'])
+        ->name('assignments.rotation.preview');
+    Route::post('/assignments/rotation', [AssignmentController::class, 'generateRotation'])
+        ->name('assignments.rotation.generate');
+
+    // Per-employee shift detail behind the "Detail Shift" row action. Also
+    // declared before the wildcard, for the same reason.
+    Route::get('/assignments/employee/{employee}/shifts', [AssignmentController::class, 'employeeShifts'])
+        ->name('assignments.employee-shifts');
+
+    // The listing is one row per employee, so its delete action removes that
+    // employee's whole rotation rather than a single cycle.
+    Route::delete('/assignments/employee/{employee}', [AssignmentController::class, 'destroyEmployeeAssignments'])
+        ->name('assignments.employee.destroy');
+
     Route::get('/assignments/{assignment}', [AssignmentController::class, 'show'])->name('assignments.show');
     Route::put('/assignments/{assignment}', [AssignmentController::class, 'update'])->name('assignments.update');
     Route::delete('/assignments/{assignment}', [AssignmentController::class, 'destroy'])->name('assignments.destroy');
