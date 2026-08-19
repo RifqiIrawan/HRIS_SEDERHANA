@@ -351,14 +351,178 @@ class AttendanceTest extends TestCase
         $this->actingAs($this->user)->postJson(route('attendance.check-out'), $this->payload())
             ->assertOk();
 
-        // Back inside the same shift window, with the day already complete.
-        Carbon::setTestNow(Carbon::create(2026, 8, 11, 13, 0));
+        // Back inside the same shift's check-in window — which now closes four
+        // hours after the 06:00 start — with the day already complete.
+        Carbon::setTestNow(Carbon::create(2026, 8, 11, 9, 0));
         $this->actingAs($this->user)
             ->postJson(route('attendance.check-in'), $this->payload())
             ->assertStatus(422)
             ->assertJsonPath('code', 'DUPLICATE_CHECK_IN');
 
         $this->assertDatabaseCount('attendances', 1);
+    }
+
+    /* ── Check-in / check-out windows ────────────────────────────────── */
+
+    /** Shift runs 06:00 → 14:00, so both bounds are read off those two times. */
+    private function attemptCheckIn(int $hour, int $minute)
+    {
+        Carbon::setTestNow(Carbon::create(2026, 8, 11, $hour, $minute));
+
+        return $this->actingAs($this->user)->postJson(route('attendance.check-in'), $this->payload());
+    }
+
+    private function checkOutAt(Carbon $when)
+    {
+        Carbon::setTestNow($when);
+
+        return $this->actingAs($this->user)->postJson(route('attendance.check-out'), $this->payload());
+    }
+
+    #[Test]
+    public function check_in_opens_four_hours_before_the_shift_starts(): void
+    {
+        $this->attemptCheckIn(2, 0)->assertCreated();
+    }
+
+    #[Test]
+    public function check_in_is_refused_more_than_four_hours_early(): void
+    {
+        $this->attemptCheckIn(1, 59)
+            ->assertStatus(422)
+            ->assertJsonPath('code', 'NO_ACTIVE_ROSTER');
+
+        $this->assertDatabaseCount('attendances', 0);
+    }
+
+    #[Test]
+    public function check_in_stays_open_until_four_hours_after_the_shift_starts(): void
+    {
+        $this->attemptCheckIn(10, 0)->assertCreated();
+    }
+
+    #[Test]
+    public function check_in_is_refused_more_than_four_hours_late(): void
+    {
+        $this->attemptCheckIn(10, 1)
+            ->assertStatus(422)
+            ->assertJsonPath('code', 'NO_ACTIVE_ROSTER');
+
+        $this->assertDatabaseCount('attendances', 0);
+    }
+
+    /**
+     * The late window is generous enough to outlive a short shift, so the
+     * shift's own end has to keep bounding it — otherwise a two-hour shift
+     * could be opened an hour after it finished.
+     */
+    #[Test]
+    public function a_shift_shorter_than_the_late_window_still_closes_at_its_own_end(): void
+    {
+        $this->roster->update(['end_datetime' => Carbon::create(2026, 8, 11, 8, 0)]);
+
+        $this->attemptCheckIn(8, 1)
+            ->assertStatus(422)
+            ->assertJsonPath('code', 'NO_ACTIVE_ROSTER');
+    }
+
+    #[Test]
+    public function check_out_is_refused_more_than_four_hours_before_the_shift_ends(): void
+    {
+        $this->actingAs($this->user)->postJson(route('attendance.check-in'), $this->payload())
+            ->assertCreated();
+
+        // Shift ends 14:00, so the earliest check-out is 10:00.
+        $this->checkOutAt(Carbon::create(2026, 8, 11, 9, 59))
+            ->assertStatus(422)
+            ->assertJsonPath('code', 'CHECK_OUT_TOO_EARLY');
+
+        $this->assertNull(Attendance::first()->check_out_at);
+    }
+
+    #[Test]
+    public function check_out_opens_four_hours_before_the_shift_ends(): void
+    {
+        $this->actingAs($this->user)->postJson(route('attendance.check-in'), $this->payload());
+
+        $this->checkOutAt(Carbon::create(2026, 8, 11, 10, 0))->assertOk();
+
+        $this->assertNotNull(Attendance::first()->check_out_at);
+    }
+
+    #[Test]
+    public function check_out_stays_open_until_seven_hours_after_the_shift_ends(): void
+    {
+        $this->actingAs($this->user)->postJson(route('attendance.check-in'), $this->payload());
+
+        $this->checkOutAt(Carbon::create(2026, 8, 11, 21, 0))->assertOk();
+
+        $this->assertNotNull(Attendance::first()->check_out_at);
+    }
+
+    #[Test]
+    public function check_out_is_refused_more_than_seven_hours_after_the_shift_ends(): void
+    {
+        $this->actingAs($this->user)->postJson(route('attendance.check-in'), $this->payload());
+
+        $this->checkOutAt(Carbon::create(2026, 8, 11, 21, 1))
+            ->assertStatus(422)
+            ->assertJsonPath('code', 'CHECK_OUT_WINDOW_EXPIRED');
+
+        $this->assertNull(Attendance::first()->check_out_at);
+    }
+
+    /**
+     * The floor may only ever delay a check-out, never invalidate one that has
+     * already happened — a late check-in must still be closeable straight away.
+     */
+    #[Test]
+    public function a_check_in_after_the_check_out_floor_can_close_immediately(): void
+    {
+        // 10:00 is both the last minute to check in and the first minute the
+        // check-out window is open.
+        $this->attemptCheckIn(10, 0)->assertCreated();
+
+        $this->checkOutAt(Carbon::create(2026, 8, 11, 10, 1))->assertOk();
+    }
+
+    #[Test]
+    public function the_screen_is_told_the_four_bounds_the_server_enforces(): void
+    {
+        $this->actingAs($this->user)
+            ->getJson(route('attendance.index'))
+            ->assertOk()
+            ->assertJsonPath('data.roster.checkin_opens', '02:00')
+            ->assertJsonPath('data.roster.checkin_closes', '10:00')
+            ->assertJsonPath('data.roster.checkout_opens', '10:00')
+            ->assertJsonPath('data.roster.checkout_closes', '21:00');
+    }
+
+    /**
+     * The night shift is the reason these labels carry a date at all: half its
+     * window falls on the following morning, where a bare "02:00" would read as
+     * the wrong day entirely.
+     */
+    #[Test]
+    public function a_cross_day_shift_carries_the_date_on_bounds_that_land_the_next_morning(): void
+    {
+        $night = Shift::factory()->night()->create(['shift_code' => 'N1']);
+
+        $this->roster->update([
+            'shift_id' => $night->id,
+            'start_datetime' => Carbon::create(2026, 8, 11, 22, 0),
+            'end_datetime' => Carbon::create(2026, 8, 12, 6, 0),
+        ]);
+
+        Carbon::setTestNow(Carbon::create(2026, 8, 11, 22, 5));
+
+        $this->actingAs($this->user)
+            ->getJson(route('attendance.index'))
+            ->assertOk()
+            ->assertJsonPath('data.roster.checkin_opens', '18:00')
+            ->assertJsonPath('data.roster.checkin_closes', '12 Aug 02:00')
+            ->assertJsonPath('data.roster.checkout_opens', '12 Aug 02:00')
+            ->assertJsonPath('data.roster.checkout_closes', '12 Aug 13:00');
     }
 
     /* ── AC-013 / AC-014 / AC-015 ────────────────────────────────────── */

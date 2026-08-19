@@ -32,6 +32,19 @@ class AttendanceException extends BusinessRuleException
         );
     }
 
+    /**
+     * The mirror of the expiry: a check-out attempted long before the shift is
+     * due to end. Carries the time it opens, because "belum boleh" without a
+     * "kapan boleh" only produces a call to HR.
+     */
+    public static function checkOutTooEarly(string $opensAt): self
+    {
+        return new self(
+            sprintf('Check-out baru bisa dilakukan mulai pukul %s.', $opensAt),
+            'CHECK_OUT_TOO_EARLY',
+        );
+    }
+
     public static function checkOutWindowExpired(): self
     {
         return new self(

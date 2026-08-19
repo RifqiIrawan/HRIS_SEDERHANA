@@ -278,6 +278,22 @@ class AttendanceController extends Controller
                     ?->copy()
                     ->addMinutes($roster->shift?->late_tolerance_minutes ?? 0)
                     ->format('H:i'),
+                // The four bounds the server will enforce, so the screen can
+                // say when an action becomes possible instead of letting the
+                // employee find out by being refused.
+                'checkin_opens' => $this->windowLabel(
+                    $roster,
+                    $roster->start_datetime?->copy()->subMinutes((int) config('hris.checkin_early_window_minutes')),
+                ),
+                'checkin_closes' => $this->windowLabel($roster, $this->checkInClosesAt($roster)),
+                'checkout_opens' => $this->windowLabel(
+                    $roster,
+                    $roster->end_datetime?->copy()->subMinutes((int) config('hris.checkout_early_window_minutes')),
+                ),
+                'checkout_closes' => $this->windowLabel(
+                    $roster,
+                    $roster->end_datetime?->copy()->addMinutes((int) config('hris.checkout_grace_minutes')),
+                ),
             ] : null,
             'location' => $location ? [
                 'id' => $location->id,
@@ -290,6 +306,39 @@ class AttendanceController extends Controller
             ] : null,
             'attendance' => $context['attendance'] ? $this->transform($context['attendance']) : null,
         ];
+    }
+
+    /**
+     * The check-in window closes at start + late window, or at the shift's own
+     * end when that comes first — the same "whichever is earlier" the query in
+     * AttendanceService gets from having both conditions.
+     */
+    private function checkInClosesAt(ShiftRoster $roster): ?Carbon
+    {
+        if (! $roster->start_datetime || ! $roster->end_datetime) {
+            return null;
+        }
+
+        $byWindow = $roster->start_datetime->copy()
+            ->addMinutes((int) config('hris.checkin_late_window_minutes'));
+
+        return $byWindow->lessThan($roster->end_datetime) ? $byWindow : $roster->end_datetime->copy();
+    }
+
+    /**
+     * A bare "02:00" is ambiguous on the cross-day night shift, where half the
+     * window falls on the following morning — so the date is carried whenever
+     * the bound lands on a different day from the roster's own.
+     */
+    private function windowLabel(ShiftRoster $roster, ?Carbon $moment): ?string
+    {
+        if (! $moment) {
+            return null;
+        }
+
+        return $moment->isSameDay($roster->roster_date)
+            ? $moment->format('H:i')
+            : $moment->format('d M H:i');
     }
 
     /**
