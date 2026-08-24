@@ -75,17 +75,22 @@ jQuery(function ($) {
                     // Both actions are employee-scoped, because the row is. A
                     // per-cycle edit lives inside Detail Shift, where there is
                     // a single assignment to point at.
-                    return '<button class="btn btn-sm btn-outline-info js-shift-detail me-1"' +
+                    // Detail Shift keeps its label — it is the row's primary
+                    // action and reads as a destination, not an icon puzzle.
+                    return HRIS.actionGroup(
+                        '<button type="button" class="btn btn-sm btn-icon btn-icon-label js-shift-detail"' +
                         ' data-employee="' + row.employee_id + '"' +
                         ' data-name="' + HRIS.esc(row.employee_name) + '"' +
                         ' data-code="' + HRIS.esc(row.employee_code) + '"' +
                         ' data-start="' + HRIS.esc(row.start_date) + '"' +
-                        ' title="Detail Shift"><i class="bi bi-calendar-week me-1"></i>Detail Shift</button>' +
-                        '<button class="btn btn-sm btn-outline-danger js-delete-rotation"' +
+                        ' title="Detail Shift"><i class="bi bi-calendar-week"></i>Detail Shift</button>' +
+                        '<button type="button" class="btn btn-sm btn-icon btn-icon-danger js-delete-rotation"' +
                         ' data-employee="' + row.employee_id + '"' +
                         ' data-name="' + HRIS.esc(row.employee_name) + '"' +
                         ' data-cycles="' + row.cycles + '"' +
-                        ' title="Hapus semua assignment"><i class="bi bi-trash"></i></button>';
+                        ' title="Hapus semua assignment"' +
+                        ' aria-label="Hapus semua assignment"><i class="bi bi-trash"></i></button>'
+                    );
                 }
             }
         ]

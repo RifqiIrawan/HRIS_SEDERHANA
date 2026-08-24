@@ -66,10 +66,23 @@ jQuery(function ($) {
                 orderable: false,
                 className: 'text-end',
                 render: function (row) {
-                    return period && period.editable
-                        ? '<button class="btn btn-sm btn-outline-secondary js-deduction" data-id="' + row.id +
-                          '" title="Kelola potongan"><i class="bi bi-dash-circle"></i></button>'
-                        : '<span class="text-body-secondary small">terkunci</span>';
+                    var buttons = '';
+
+                    // Deductions only while the period is open; printing stays
+                    // available after it closes, which is when slips go out.
+                    if (period && period.editable) {
+                        buttons += '<button type="button" class="btn btn-sm btn-icon js-deduction" data-id="' +
+                            row.id + '" title="Kelola potongan" aria-label="Kelola potongan">' +
+                            '<i class="bi bi-dash-circle"></i></button>';
+                    }
+
+                    if (window.HRIS_URLS.slip) {
+                        buttons += '<button type="button" class="btn btn-sm btn-icon js-slip" data-id="' +
+                            row.id + '" title="Cetak slip gaji" aria-label="Cetak slip gaji ' +
+                            HRIS.esc(row.employee_name) + '"><i class="bi bi-printer"></i></button>';
+                    }
+
+                    return buttons ? HRIS.actionGroup(buttons) : '<span class="text-body-secondary small">−</span>';
                 }
             }
         ]
@@ -204,6 +217,14 @@ jQuery(function ($) {
         });
     });
 
+    /* ── Payslip ─────────────────────────────────────────────────── */
+
+    // A new tab rather than a modal: the slip is meant for the printer, and
+    // the print dialog should not drag this page's sidebar and table along.
+    $('#payrollTable').on('click', '.js-slip', function () {
+        window.open(window.HRIS_URLS.slip.replace('__ID__', $(this).data('id')), '_blank', 'noopener');
+    });
+
     /* ── Deductions ─────────────────────────────────────────────────── */
 
     $('#payrollTable').on('click', '.js-deduction', function () {
@@ -238,7 +259,8 @@ jQuery(function ($) {
                 '<td>' + HRIS.esc(d.description) + '</td>' +
                 '<td class="text-end text-tabular">' + HRIS.formatRupiah(d.amount) + '</td>' +
                 '<td class="text-end">' +
-                '<button class="btn btn-sm btn-outline-danger js-remove-deduction" data-id="' + d.id + '">' +
+                '<button type="button" class="btn btn-sm btn-icon btn-icon-danger js-remove-deduction"' +
+                ' data-id="' + d.id + '" title="Hapus potongan" aria-label="Hapus potongan">' +
                 '<i class="bi bi-x-lg"></i></button></td>' +
                 '</tr>';
         }).join(''));

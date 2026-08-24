@@ -22,6 +22,9 @@ class DatabaseSeeder extends Seeder
             MenuSeeder::class,
             ShiftSeeder::class,
             LocationSeeder::class,
+            // Before employees: the Karyawan form validates its three
+            // status/type fields against these tables now.
+            ReferenceSeeder::class,
             EmployeeSeeder::class,
             UserSeeder::class,
         ]);

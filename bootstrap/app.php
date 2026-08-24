@@ -3,6 +3,7 @@
 use App\Exceptions\BusinessRuleException;
 use App\Http\Middleware\DataTableRequest;
 use App\Http\Middleware\EnsureUserIsActive;
+use App\Http\Middleware\ForceJsonResponse;
 use App\Http\Middleware\MenuAccessMiddleware;
 use App\Http\Middleware\RoleMiddleware;
 use Illuminate\Auth\AuthenticationException;
@@ -16,6 +17,7 @@ use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
         web: __DIR__.'/../routes/web.php',
+        api: __DIR__.'/../routes/api.php',
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
     )
@@ -24,6 +26,12 @@ return Application::configure(basePath: dirname(__DIR__))
         // translated by the time a controller reads the query string.
         $middleware->web(append: [
             DataTableRequest::class,
+        ]);
+
+        // Mobile clients reach the same controllers over the API stack, which
+        // must never answer with HTML; see ForceJsonResponse.
+        $middleware->api(prepend: [
+            ForceJsonResponse::class,
         ]);
 
         $middleware->alias([

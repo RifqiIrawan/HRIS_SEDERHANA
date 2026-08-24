@@ -3,11 +3,16 @@
 namespace App\Http\Controllers;
 
 use App\Models\Employee;
+use App\Models\EmployeeStatus;
+use App\Models\EmploymentStatus;
+use App\Models\EmploymentType;
 use App\Models\Location;
-use App\Models\Role;
 use App\Models\PayrollPeriod;
+use App\Models\ReferenceModel;
+use App\Models\Role;
 use App\Models\Shift;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Collection;
 
 /**
  * One call that fills every <select> on a page. Pages with four dropdowns
@@ -19,6 +24,10 @@ class LookupController extends Controller
     {
         return $this->ok([
             'employees' => Employee::active()
+                // `has_user` lets the User form hide employees that are already
+                // linked to an account, instead of offering a choice the unique
+                // rule in UserRequest is guaranteed to reject on save.
+                ->withExists('user')
                 ->orderBy('employee_code')
                 ->get(['id', 'employee_code', 'full_name', 'daily_rate'])
                 ->map(fn (Employee $e) => [
@@ -26,6 +35,7 @@ class LookupController extends Controller
                     'code' => $e->employee_code,
                     'label' => $e->employee_code.' — '.$e->full_name,
                     'daily_rate' => (float) $e->daily_rate,
+                    'has_user' => (bool) $e->user_exists,
                 ]),
 
             'locations' => Location::active()
@@ -78,6 +88,34 @@ class LookupController extends Controller
                     'end_date' => $p->end_date->toDateString(),
                     'status' => $p->status,
                 ]),
+
+            // The three Karyawan reference masters. Only ACTIVE rows are
+            // offered; a form editing a record that still carries a
+            // deactivated code re-adds that one option itself.
+            'employment_statuses' => $this->reference(EmploymentStatus::class),
+            'employment_types' => $this->reference(EmploymentType::class),
+            'employee_statuses' => $this->reference(EmployeeStatus::class),
         ]);
+    }
+
+    /**
+     * A reference master as select options.
+     *
+     * Unlike the other lists these are selected by code, not id — the employees
+     * row stores the code — so `code` is what the caller writes into the option
+     * value (HRIS.fillSelect's `valueKey`).
+     *
+     * @param  class-string<ReferenceModel>  $model
+     */
+    private function reference(string $model): Collection
+    {
+        return $model::active()
+            ->ordered()
+            ->get(['id', 'code', 'name'])
+            ->map(fn (ReferenceModel $r) => [
+                'id' => $r->id,
+                'code' => $r->code,
+                'label' => $r->name,
+            ]);
     }
 }

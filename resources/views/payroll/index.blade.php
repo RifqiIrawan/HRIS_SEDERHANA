@@ -110,7 +110,7 @@
                     </div>
                     <div class="col-8 col-sm-3">
                         <label class="form-label small mb-1" for="deduction_amount">Jumlah (Rp)</label>
-                        <input type="number" class="form-control" id="deduction_amount" name="amount"
+                        <input type="number" class="form-control" id="deduction_amount" name="amount" placeholder="50000"
                                min="1" step="1000" required>
                     </div>
                     <div class="col-4 col-sm-2 d-grid">
@@ -133,7 +133,12 @@
     window.HRIS_URLS = {
         base: @json(url('payroll')),
         lookups: @json(route('lookups')),
-        isAdmin: @json(auth()->user()->isAdmin())
+        isAdmin: @json(auth()->user()->isAdmin()),
+
+        {{-- Null when this role has no claim on payroll.slip, and the print
+             button is then never drawn. The route enforces the same rule, so
+             hiding the icon is presentation, not the access control itself. --}}
+        slip: @json($canPrintSlip ? route('payroll.slip', ['payroll' => '__ID__']) : null)
     };
     window.HRIS_SELECTED_PERIOD = @json(request()->integer('period_id') ?: null);
 </script>

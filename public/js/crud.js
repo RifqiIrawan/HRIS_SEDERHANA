@@ -19,6 +19,7 @@
      * @param {object}   [config.labels]     { create, edit }
      * @param {function} [config.onLoaded]   (json) => void, per draw
      * @param {function} [config.beforeSubmit] ($form) => bool|void, cancel on false
+     * @param {function} [config.onSaved]    (isCreate) => void, after a save succeeds
      * @param {object}   [config.table]      extra DataTables options
      */
     HRIS.crud = function (config) {
@@ -142,10 +143,14 @@
                 data: $.param(data)
             })
                 .done(function () {
+                    var wasCreate = !editingId;
+
                     if (modal) modal.hide();
-                    HRIS.toast(editingId ? 'Data berhasil diperbarui.' : 'Data berhasil disimpan.');
+                    HRIS.toast(wasCreate ? 'Data berhasil disimpan.' : 'Data berhasil diperbarui.');
                     // An edit stays where it is; a new row may sort onto page one.
-                    load(!editingId);
+                    load(wasCreate);
+
+                    if (config.onSaved) config.onSaved(wasCreate);
                 })
                 .fail(function (error) {
                     HRIS.showErrors($form, error.errors);

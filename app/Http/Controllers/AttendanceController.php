@@ -255,7 +255,7 @@ class AttendanceController extends Controller
      * @param  array{roster: ?ShiftRoster, attendance: ?Attendance, state: string}  $context
      * @return array<string, mixed>
      */
-    private function contextPayload(array $context): array
+    protected function contextPayload(array $context): array
     {
         $roster = $context['roster'];
         $location = $roster?->location;
@@ -342,9 +342,22 @@ class AttendanceController extends Controller
     }
 
     /**
+     * Where a stored attendance photo can be fetched from.
+     *
+     * A seam, because the answer depends on who is asking: the browser reads
+     * the session-guarded web route, while a mobile client holding a bearer
+     * token cannot and needs the API one. Api\AttendanceController overrides
+     * this rather than restating the whole payload.
+     */
+    protected function photoUrl(AttendancePhoto $photo): string
+    {
+        return route('attendance.photo', $photo);
+    }
+
+    /**
      * @return array<string, mixed>
      */
-    private function transform(Attendance $attendance, bool $detailed = false): array
+    protected function transform(Attendance $attendance, bool $detailed = false): array
     {
         $data = [
             'id' => $attendance->id,
@@ -366,7 +379,7 @@ class AttendanceController extends Controller
             'status' => $attendance->status,
             'photos' => $attendance->relationLoaded('photos')
                 ? $attendance->photos->mapWithKeys(fn (AttendancePhoto $p) => [
-                    $p->photo_type => route('attendance.photo', $p),
+                    $p->photo_type => $this->photoUrl($p),
                 ])
                 : null,
         ];
@@ -392,7 +405,7 @@ class AttendanceController extends Controller
      * AC-002 — the employee always comes from the authenticated session, never
      * from a request field.
      */
-    private function currentEmployee(Request $request): Employee
+    protected function currentEmployee(Request $request): Employee
     {
         $employee = $request->user()->employee;
 

@@ -411,6 +411,39 @@ class PayrollTest extends TestCase
         $this->assertDatabaseCount('payroll_details', 0);
     }
 
+    /* ── Payslip ─────────────────────────────────────────────────────── */
+
+    #[Test]
+    public function the_payslip_prints_the_figures_the_payroll_row_holds(): void
+    {
+        $employee = Employee::factory()->create(['daily_rate' => 150000]);
+        $this->attendances($employee, Attendance::PRESENT, 25);
+        $this->payroll->generate($this->period);
+
+        $payroll = Payroll::where('employee_id', $employee->id)->first();
+        $this->payroll->addDeduction($payroll, 'Kasbon', 200000);
+
+        $this->actingAs(User::factory()->hr()->create())
+            ->get(route('payroll.slip', $payroll))
+            ->assertOk()
+            ->assertSee($employee->full_name)
+            ->assertSee('Kasbon')
+            // Spec §59's worked example: 25 × 150.000 − 200.000.
+            ->assertSee('3.550.000');
+    }
+
+    #[Test]
+    public function an_employee_cannot_print_a_payslip(): void
+    {
+        $employee = Employee::factory()->create();
+        $this->payroll->generate($this->period);
+        $payroll = Payroll::where('employee_id', $employee->id)->first();
+
+        $this->actingAs(User::factory()->forEmployee($employee)->create())
+            ->get(route('payroll.slip', $payroll))
+            ->assertStatus(403);
+    }
+
     #[Test]
     public function payroll_detail_amounts_are_validated(): void
     {

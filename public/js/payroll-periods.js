@@ -59,10 +59,13 @@ jQuery(function ($) {
                 render: function (row) {
                     // A closed period is frozen (spec §44): still openable and
                     // renameable, but no longer deletable.
-                    return '<a class="btn btn-sm btn-outline-primary" title="Buka payroll" href="' +
+                    return HRIS.actionGroup(
+                        '<a class="btn btn-sm btn-icon btn-icon-accent" title="Buka payroll"' +
+                        ' aria-label="Buka payroll" href="' +
                         window.HRIS_URLS.payroll + '?period_id=' + row.id +
-                        '"><i class="bi bi-cash-stack"></i></a> ' +
-                        HRIS.rowActions(row.id, 'periode ' + row.period_name, { remove: !!row.editable });
+                        '"><i class="bi bi-cash-stack"></i></a>' +
+                        HRIS.rowActions(row.id, 'periode ' + row.period_name, { remove: !!row.editable })
+                    );
                 }
             }
         ]

@@ -83,11 +83,13 @@ jQuery(function ($) {
                 HRIS.esc(row.location_name) + '</div></td>' +
                 '<td class="text-center">' + HRIS.statusBadge(row.status) + '</td>' +
                 '<td class="text-end text-nowrap">' +
-                '<button class="btn btn-sm btn-outline-secondary js-cycle-edit me-1" data-id="' + row.id +
-                '" title="Ubah siklus ini"><i class="bi bi-pencil"></i></button>' +
-                '<button class="btn btn-sm btn-outline-danger js-cycle-delete" data-id="' + row.id +
-                '" data-label="' + HRIS.esc(row.shift_code + ' ' + period) +
-                '" title="Hapus siklus ini"><i class="bi bi-trash"></i></button>' +
+                HRIS.actionGroup(
+                    '<button type="button" class="btn btn-sm btn-icon js-cycle-edit" data-id="' + row.id +
+                    '" title="Ubah siklus ini" aria-label="Ubah siklus ini"><i class="bi bi-pencil"></i></button>' +
+                    '<button type="button" class="btn btn-sm btn-icon btn-icon-danger js-cycle-delete" data-id="' + row.id +
+                    '" data-label="' + HRIS.esc(row.shift_code + ' ' + period) +
+                    '" title="Hapus siklus ini" aria-label="Hapus siklus ini"><i class="bi bi-trash"></i></button>'
+                ) +
                 '</td></tr>';
         }).join('');
 

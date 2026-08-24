@@ -45,33 +45,38 @@
         <div class="row g-3">
             <div class="col-12 col-sm-6 col-lg-12">
                 <label class="form-label" for="location_code">Kode Lokasi <span class="text-danger">*</span></label>
-                <input type="text" class="form-control" id="location_code" name="location_code" maxlength="30" required>
+                <input type="text" class="form-control" id="location_code" name="location_code"
+                       placeholder="LOC004" maxlength="30" required>
             </div>
             <div class="col-12 col-sm-6 col-lg-12">
                 <label class="form-label" for="location_name">Nama Lokasi <span class="text-danger">*</span></label>
-                <input type="text" class="form-control" id="location_name" name="location_name" maxlength="150" required>
+                <input type="text" class="form-control" id="location_name" name="location_name"
+                       placeholder="Kantor Pusat" maxlength="150" required>
             </div>
             <div class="col-12">
                 <label class="form-label" for="address">Alamat</label>
-                <textarea class="form-control" id="address" name="address" rows="2" maxlength="500"></textarea>
+                <textarea class="form-control" id="address" name="address"
+                          placeholder="Jl. Sudirman No. 1, Jakarta Selatan" rows="2" maxlength="500"></textarea>
             </div>
             <div class="col-6">
                 <label class="form-label" for="latitude">Latitude <span class="text-danger">*</span></label>
-                <input type="text" class="form-control text-tabular" id="latitude" name="latitude" required readonly>
+                <input type="text" class="form-control text-tabular" id="latitude" name="latitude"
+                       placeholder="Klik titik pada peta" required readonly>
             </div>
             <div class="col-6">
                 <label class="form-label" for="longitude">Longitude <span class="text-danger">*</span></label>
-                <input type="text" class="form-control text-tabular" id="longitude" name="longitude" required readonly>
+                <input type="text" class="form-control text-tabular" id="longitude" name="longitude"
+                       placeholder="Klik titik pada peta" required readonly>
             </div>
             <div class="col-6">
                 <label class="form-label" for="radius_meter">Radius (m) <span class="text-danger">*</span></label>
-                <input type="number" class="form-control" id="radius_meter" name="radius_meter"
+                <input type="number" class="form-control" id="radius_meter" name="radius_meter" placeholder="10"
                        min="1" max="10" step="1" required>
                 <div class="form-text">Maksimal 10 meter (spec §23).</div>
             </div>
             <div class="col-6">
                 <label class="form-label" for="gps_accuracy_limit">Batas Akurasi (m) <span class="text-danger">*</span></label>
-                <input type="number" class="form-control" id="gps_accuracy_limit" name="gps_accuracy_limit"
+                <input type="number" class="form-control" id="gps_accuracy_limit" name="gps_accuracy_limit" placeholder="20"
                        min="1" max="100" step="1" required>
                 <div class="form-text">Default 20 meter.</div>
             </div>

@@ -19,6 +19,10 @@ class Role extends Model
 
     public const CODES = [self::ADMIN, self::HR, self::EMPLOYEE];
 
+    public const ACTIVE = 'ACTIVE';
+
+    public const INACTIVE = 'INACTIVE';
+
     protected $fillable = [
         'role_code',
         'role_name',

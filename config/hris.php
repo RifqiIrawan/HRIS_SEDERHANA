@@ -26,9 +26,21 @@ return [
     |
     | It must be true in production: off, any device anywhere can clock in for
     | a shift. The check-in screen says so on the page while it is disabled.
+    |
+    | So the default follows APP_ENV rather than being a flat constant: only a
+    | developer environment starts relaxed, and every other value of APP_ENV —
+    | production, staging, or anything unrecognised — enforces. A .env carried
+    | over from a laptop therefore cannot silently disarm the geofence on a
+    | server; the environment name has to say "local" for that to happen.
+    |
+    | HRIS_ENFORCE_GEOFENCE still overrides in either direction when a specific
+    | environment needs the opposite of its default.
     */
 
-    'enforce_geofence' => (bool) env('HRIS_ENFORCE_GEOFENCE', true),
+    'enforce_geofence' => (bool) env(
+        'HRIS_ENFORCE_GEOFENCE',
+        ! in_array(env('APP_ENV', 'production'), ['local', 'development'], true),
+    ),
 
     /*
     |--------------------------------------------------------------------------

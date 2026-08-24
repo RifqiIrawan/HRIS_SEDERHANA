@@ -43,9 +43,13 @@ class AuditLog extends Model
         ?Model $subject = null,
         ?string $description = null,
         array $context = [],
+        ?int $actorId = null,
     ): self {
         return static::create([
-            'user_id' => Auth::id(),
+            // Normally whoever is signed in. The mobile login passes the actor
+            // explicitly: at that point the token has only just been minted and
+            // nothing has authenticated the request, so the guard is still empty.
+            'user_id' => $actorId ?? Auth::id(),
             'action' => $action,
             'auditable_type' => $subject ? $subject::class : null,
             'auditable_id' => $subject?->getKey(),

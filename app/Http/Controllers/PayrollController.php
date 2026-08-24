@@ -7,6 +7,7 @@ use App\Models\AuditLog;
 use App\Models\Payroll;
 use App\Models\PayrollDetail;
 use App\Models\PayrollPeriod;
+use App\Services\MenuAccessService;
 use App\Services\PayrollService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -95,7 +96,14 @@ class PayrollController extends Controller
     public function index(Request $request): View|JsonResponse
     {
         if (! $this->wantsData($request)) {
-            return view('payroll.index');
+            // Asked once here rather than per row in JavaScript: the same
+            // service the route middleware consults decides whether this role
+            // may print at all, so the icon can never appear without the URL
+            // behind it being reachable.
+            return view('payroll.index', [
+                'canPrintSlip' => app(MenuAccessService::class)
+                    ->allowsRoute($request->user(), 'payroll.slip'),
+            ]);
         }
 
         $period = $request->filled('period_id')
@@ -170,6 +178,32 @@ class PayrollController extends Controller
         $this->payroll->addDeduction($payroll, $data['description'], (float) $data['amount']);
 
         return $this->ok($this->transformPayroll($payroll->refresh()->load('details')), 'Potongan ditambahkan.', 201);
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Payslip
+    |--------------------------------------------------------------------------
+    */
+
+    /**
+     * The printable payslip for one payroll row.
+     *
+     * A page rather than a generated file: the browser's own print dialog turns
+     * it into paper or a PDF, which is the same result without a PDF library in
+     * the dependency list. Who may open it is decided by the payroll_slip menu
+     * row (ADMIN + HR), the way every other URL here is governed.
+     */
+    public function slip(Payroll $payroll): View
+    {
+        $payroll->load(['employee', 'period', 'details']);
+
+        return view('payroll.slip', [
+            'payroll' => $payroll,
+            'employee' => $payroll->employee,
+            'period' => $payroll->period,
+            'deductions' => $payroll->details->where('detail_type', PayrollDetail::DEDUCTION),
+        ]);
     }
 
     public function destroyDeduction(PayrollDetail $detail): JsonResponse

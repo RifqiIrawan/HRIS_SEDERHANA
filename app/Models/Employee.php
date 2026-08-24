@@ -18,12 +18,14 @@ class Employee extends Model
 
     public const RESIGNED = 'RESIGNED';
 
-    public const STATUSES = [self::ACTIVE, self::INACTIVE, self::RESIGNED];
-
-    public const EMPLOYMENT_STATUSES = ['PERCOBAAN', 'KONTRAK', 'TETAP'];
-
-    /** Spec §11 — the MVP only pays daily-rate staff. */
-    public const EMPLOYMENT_TYPES = ['DAILY'];
+    /*
+     * The three constants above are the codes the application itself compares
+     * against (scopeActive, the assignment/roster pickers, the attendance
+     * guard). The *list* of allowed values is no longer here: employment_status,
+     * employment_type and status are validated against the employment_statuses,
+     * employment_types and employee_statuses masters, so an administrator can
+     * add a value without a deploy. See ReferenceModel.
+     */
 
     protected $fillable = [
         'employee_code',

@@ -72,7 +72,7 @@
                     <label class="form-label" for="email">Email</label>
                     <div class="input-group">
                         <span class="input-group-text"><i class="bi bi-envelope"></i></span>
-                        <input type="email" class="form-control" id="email" name="email"
+                        <input type="email" class="form-control" id="email" name="email" placeholder="nama@perusahaan.com"
                                value="{{ $demoEmail }}"
                                autocomplete="username" required autofocus>
                     </div>
@@ -82,7 +82,7 @@
                     <label class="form-label" for="password">Password</label>
                     <div class="input-group">
                         <span class="input-group-text"><i class="bi bi-lock"></i></span>
-                        <input type="password" class="form-control" id="password" name="password"
+                        <input type="password" class="form-control" id="password" name="password" placeholder="Password akun Anda"
                                value="{{ $demoPassword }}"
                                autocomplete="current-password" required>
                         <button class="btn btn-outline-secondary" type="button" id="togglePassword"

@@ -144,6 +144,12 @@ class MenuAccessService
      */
     private function visible(Menu $menu, User $user): bool
     {
+        // An action menu governs a route without being a destination — its
+        // route takes parameters, so there is no link the sidebar could build.
+        if ($menu->is_action) {
+            return false;
+        }
+
         if ($menu->requires_employee && $user->employee_id === null) {
             return false;
         }

@@ -211,11 +211,16 @@ jQuery(function ($) {
                 render: function (row) {
                     var coords = encodeURIComponent(row.latitude) + '/' + encodeURIComponent(row.longitude);
 
-                    return '<a class="btn btn-sm btn-outline-secondary" target="_blank" rel="noopener"' +
-                        ' title="Buka di peta" href="https://www.openstreetmap.org/?mlat=' +
+                    // Wrapping the whole cell keeps the map link on the same
+                    // rhythm as the edit/delete pair inside rowActions().
+                    return HRIS.actionGroup(
+                        '<a class="btn btn-sm btn-icon" target="_blank" rel="noopener"' +
+                        ' title="Buka di peta" aria-label="Buka di peta"' +
+                        ' href="https://www.openstreetmap.org/?mlat=' +
                         encodeURIComponent(row.latitude) + '&mlon=' + encodeURIComponent(row.longitude) +
-                        '#map=19/' + coords + '"><i class="bi bi-map"></i></a> ' +
-                        HRIS.rowActions(row.id, 'lokasi ' + row.location_name);
+                        '#map=19/' + coords + '"><i class="bi bi-map"></i></a>' +
+                        HRIS.rowActions(row.id, 'lokasi ' + row.location_name)
+                    );
                 }
             }
         ]

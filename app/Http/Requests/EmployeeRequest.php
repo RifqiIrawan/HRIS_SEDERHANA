@@ -2,7 +2,6 @@
 
 namespace App\Http\Requests;
 
-use App\Models\Employee;
 use Illuminate\Validation\Rule;
 
 /** Spec §11. */
@@ -26,11 +25,14 @@ class EmployeeRequest extends BaseRequest
             'birth_date' => ['nullable', 'date', 'before:today'],
             'phone' => ['nullable', 'string', 'max:30'],
             'address' => ['nullable', 'string', 'max:500'],
-            'employment_status' => ['required', Rule::in(Employee::EMPLOYMENT_STATUSES)],
-            'employment_type' => ['required', Rule::in(Employee::EMPLOYMENT_TYPES)],
+            // Checked against the masters rather than a constant, and without
+            // an "only ACTIVE" filter: an employee already carrying a value
+            // that was since deactivated must still be editable and savable.
+            'employment_status' => ['required', 'string', 'max:20', Rule::exists('employment_statuses', 'code')],
+            'employment_type' => ['required', 'string', 'max:20', Rule::exists('employment_types', 'code')],
             'join_date' => ['nullable', 'date'],
             'daily_rate' => ['required', 'numeric', 'min:0', 'max:99999999999'],
-            'status' => ['required', Rule::in(Employee::STATUSES)],
+            'status' => ['required', 'string', 'max:20', Rule::exists('employee_statuses', 'code')],
         ];
     }
 

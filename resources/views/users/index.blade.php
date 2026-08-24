@@ -44,22 +44,23 @@
 <x-modal-form>
     <div class="col-12 col-md-6">
         <label class="form-label" for="name">Nama <span class="text-danger">*</span></label>
-        <input type="text" class="form-control" id="name" name="name" maxlength="150" required>
+        <input type="text" class="form-control" id="name" name="name" placeholder="Budi Santoso" maxlength="150" required>
     </div>
     <div class="col-12 col-md-6">
         <label class="form-label" for="email">Email <span class="text-danger">*</span></label>
-        <input type="email" class="form-control" id="email" name="email" maxlength="150" required>
+        <input type="email" class="form-control" id="email" name="email"
+               placeholder="budi@perusahaan.com" maxlength="150" required>
     </div>
     <div class="col-12 col-md-6">
         <label class="form-label" for="password">Password <span class="text-danger js-password-required">*</span></label>
-        <input type="password" class="form-control" id="password" name="password"
+        <input type="password" class="form-control" id="password" name="password" placeholder="Minimal 8 karakter"
                autocomplete="new-password" minlength="8">
         <div class="form-text js-password-hint d-none">Kosongkan bila tidak ingin mengubah password.</div>
     </div>
     <div class="col-12 col-md-6">
         <label class="form-label" for="password_confirmation">Konfirmasi Password</label>
         <input type="password" class="form-control" id="password_confirmation" name="password_confirmation"
-               autocomplete="new-password" minlength="8">
+               placeholder="Ulangi password" autocomplete="new-password" minlength="8">
     </div>
     <div class="col-12 col-md-6">
         <label class="form-label" for="role_id">Role <span class="text-danger">*</span></label>
@@ -68,8 +69,9 @@
     <div class="col-12 col-md-6">
         <label class="form-label" for="employee_id">Karyawan</label>
         <select class="form-select" id="employee_id" name="employee_id"></select>
-        {{-- AC-002: an EMPLOYEE account must resolve to an employee row. --}}
-        <div class="form-text">Wajib diisi untuk akun dengan role EMPLOYEE.</div>
+        {{-- AC-002: an EMPLOYEE account must resolve to an employee row. The
+             text is swapped by users.js when no employee is free to link. --}}
+        <div class="form-text js-employee-hint">Wajib diisi untuk akun dengan role EMPLOYEE.</div>
     </div>
     <div class="col-12 col-md-6">
         <label class="form-label" for="status">Status <span class="text-danger">*</span></label>

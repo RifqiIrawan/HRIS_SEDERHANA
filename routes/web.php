@@ -6,6 +6,9 @@ use App\Http\Controllers\AttendancePhotoController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EmployeeController;
+use App\Http\Controllers\EmployeeStatusController;
+use App\Http\Controllers\EmploymentStatusController;
+use App\Http\Controllers\EmploymentTypeController;
 use App\Http\Controllers\LocationController;
 use App\Http\Controllers\LookupController;
 use App\Http\Controllers\PayrollController;
@@ -110,6 +113,24 @@ Route::middleware(['auth', 'active', 'menu'])->group(function () {
     Route::put('/employees/{employee}', [EmployeeController::class, 'update'])->name('employees.update');
     Route::delete('/employees/{employee}', [EmployeeController::class, 'destroy'])->name('employees.destroy');
 
+    /*
+    | The three reference lists behind the Karyawan form. Same CRUD shape, one
+    | route block each so every list keeps its own URL and its own menu row.
+    | The parameter is a plain id rather than a bound model, because
+    | ReferenceController is generic over three different models.
+    */
+    foreach ([
+        'employment-statuses' => EmploymentStatusController::class,
+        'employment-types' => EmploymentTypeController::class,
+        'employee-statuses' => EmployeeStatusController::class,
+    ] as $path => $controller) {
+        Route::get('/'.$path, [$controller, 'index'])->name($path.'.index');
+        Route::post('/'.$path, [$controller, 'store'])->name($path.'.store');
+        Route::get('/'.$path.'/{reference}', [$controller, 'show'])->name($path.'.show');
+        Route::put('/'.$path.'/{reference}', [$controller, 'update'])->name($path.'.update');
+        Route::delete('/'.$path.'/{reference}', [$controller, 'destroy'])->name($path.'.destroy');
+    }
+
     Route::get('/locations', [LocationController::class, 'index'])->name('locations.index');
     Route::post('/locations', [LocationController::class, 'store'])->name('locations.store');
     Route::get('/locations/{location}', [LocationController::class, 'show'])->name('locations.show');
@@ -172,6 +193,11 @@ Route::middleware(['auth', 'active', 'menu'])->group(function () {
 
         Route::get('/', [PayrollController::class, 'index'])->name('index');
         Route::delete('/detail/{detail}', [PayrollController::class, 'destroyDeduction'])->name('detail.destroy');
+
+        // Before /{period}: a static segment must win over the wildcard, or
+        // "slip" would be read as a period id. Governed by its own menu row so
+        // printing a payslip is an access decision of its own (ADMIN + HR).
+        Route::get('/slip/{payroll}', [PayrollController::class, 'slip'])->name('slip');
 
         Route::post('/{period}/generate', [PayrollController::class, 'generate'])->name('generate');
         Route::post('/{period}/close', [PayrollController::class, 'close'])->name('close');

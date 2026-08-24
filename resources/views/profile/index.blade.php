@@ -61,18 +61,18 @@
                     <div class="mb-3">
                         <label class="form-label" for="current_password">Password Saat Ini <span class="text-danger">*</span></label>
                         <input type="password" class="form-control" id="current_password" name="current_password"
-                               autocomplete="current-password" required>
+                               placeholder="Password yang dipakai sekarang" autocomplete="current-password" required>
                     </div>
                     <div class="mb-3">
                         <label class="form-label" for="password">Password Baru <span class="text-danger">*</span></label>
-                        <input type="password" class="form-control" id="password" name="password"
+                        <input type="password" class="form-control" id="password" name="password" placeholder="Minimal 8 karakter"
                                autocomplete="new-password" minlength="8" required>
                         <div class="form-text">Minimal 8 karakter.</div>
                     </div>
                     <div class="mb-3">
                         <label class="form-label" for="password_confirmation">Konfirmasi Password Baru <span class="text-danger">*</span></label>
                         <input type="password" class="form-control" id="password_confirmation" name="password_confirmation"
-                               autocomplete="new-password" minlength="8" required>
+                               placeholder="Ulangi password baru" autocomplete="new-password" minlength="8" required>
                     </div>
 
                     <button type="submit" class="btn btn-primary js-save-password">

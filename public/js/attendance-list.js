@@ -35,8 +35,11 @@
             // The icon still says at a glance whether the row carries photos,
             // but every row can be opened — the readings behind a row without a
             // photo are exactly the ones worth inspecting.
-            return '<button class="btn btn-sm btn-outline-secondary js-detail" title="Lihat detail">' +
-                '<i class="bi bi-' + (hasPhoto ? 'image' : 'eye') + '"></i></button>';
+            return HRIS.actionGroup(
+                '<button type="button" class="btn btn-sm btn-icon js-detail"' +
+                ' title="Lihat detail" aria-label="Lihat detail">' +
+                '<i class="bi bi-' + (hasPhoto ? 'image' : 'eye') + '"></i></button>'
+            );
         }
 
         /* Column order must match the <thead> in the history and monitoring

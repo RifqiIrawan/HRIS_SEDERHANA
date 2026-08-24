@@ -18,6 +18,8 @@ class MenuSeeder extends Seeder
 {
     /**
      * code, name, icon, group, route, patterns, requires_employee, locked, roles
+     * and, optionally, is_action — a row that governs a route without owning a
+     * sidebar link (its route takes parameters, so no link can be built).
      */
     private const MENUS = [
         [
@@ -45,6 +47,18 @@ class MenuSeeder extends Seeder
         [
             'employees', 'Karyawan', 'people', 'Master Data', 'employees.index',
             ['employees.*'], false, false, [Role::ADMIN, Role::HR],
+        ],
+        [
+            'employment_statuses', 'Status Kepegawaian', 'patch-check', 'Master Data', 'employment-statuses.index',
+            ['employment-statuses.*'], false, false, [Role::ADMIN, Role::HR],
+        ],
+        [
+            'employment_types', 'Tipe Kepegawaian', 'briefcase', 'Master Data', 'employment-types.index',
+            ['employment-types.*'], false, false, [Role::ADMIN, Role::HR],
+        ],
+        [
+            'employee_statuses', 'Status Karyawan', 'toggles', 'Master Data', 'employee-statuses.index',
+            ['employee-statuses.*'], false, false, [Role::ADMIN, Role::HR],
         ],
         [
             'locations', 'Lokasi', 'pin-map', 'Master Data', 'locations.index',
@@ -83,6 +97,13 @@ class MenuSeeder extends Seeder
             false, false, [Role::ADMIN, Role::HR],
         ],
         [
+            // Not a screen: printing acts on one payroll row. It is listed here
+            // so the Role matrix can govern who may print a payslip at all —
+            // without a claim of its own the route would be denied outright.
+            'payroll_slip', 'Cetak Slip Gaji', 'printer', 'Payroll', 'payroll.slip',
+            ['payroll.slip'], false, false, [Role::ADMIN, Role::HR], true,
+        ],
+        [
             'reports_attendance', 'Laporan Absensi', 'file-earmark-bar-graph', 'Laporan', 'reports.attendance',
             ['reports.attendance', 'reports.attendance.export'], false, false, [Role::ADMIN, Role::HR],
         ],
@@ -96,9 +117,10 @@ class MenuSeeder extends Seeder
     {
         $roleIds = Role::pluck('id', 'role_code');
 
-        foreach (self::MENUS as $index => [
-            $code, $name, $icon, $group, $route, $patterns, $requiresEmployee, $locked, $roles
-        ]) {
+        foreach (self::MENUS as $index => $row) {
+            [$code, $name, $icon, $group, $route, $patterns, $requiresEmployee, $locked, $roles] = $row;
+            $isAction = $row[9] ?? false;
+
             $menu = Menu::updateOrCreate(
                 ['menu_code' => $code],
                 [
@@ -108,6 +130,7 @@ class MenuSeeder extends Seeder
                     'route_name' => $route,
                     'route_patterns' => $patterns,
                     'requires_employee' => $requiresEmployee,
+                    'is_action' => $isAction,
                     'is_locked' => $locked,
                     'sort_order' => ($index + 1) * 10,
                     'status' => Menu::ACTIVE,

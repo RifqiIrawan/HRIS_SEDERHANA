@@ -44,15 +44,20 @@
 
         <main class="app-content">
             <div class="container-fluid px-3 px-lg-4 py-3 py-lg-4">
-                <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
-                    <div>
-                        <h1 class="h4 mb-0">@yield('page-title', View::getSection('title', 'Dashboard'))</h1>
-                        @hasSection('page-subtitle')
-                            <p class="text-body-secondary small mb-0 mt-1">@yield('page-subtitle')</p>
-                        @endif
+                {{-- A data-table page prints its own heading inside the card's
+                     title band and claims this section to say so; printing a
+                     second one above the card would just repeat the words. --}}
+                @unless (View::hasSection('page-heading-in-card'))
+                    <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+                        <div>
+                            <h1 class="h4 mb-0">@yield('page-title', View::getSection('title', 'Dashboard'))</h1>
+                            @hasSection('page-subtitle')
+                                <p class="text-body-secondary small mb-0 mt-1">@yield('page-subtitle')</p>
+                            @endif
+                        </div>
+                        <div class="d-flex flex-wrap gap-2">@yield('page-actions')</div>
                     </div>
-                    <div class="d-flex flex-wrap gap-2">@yield('page-actions')</div>
-                </div>
+                @endunless
 
                 @yield('content')
             </div>

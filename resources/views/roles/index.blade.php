@@ -33,81 +33,84 @@
     </x-slot:head>
 </x-data-table>
 
-<div class="card mt-4">
-    <div class="card-header bg-body border-bottom d-flex flex-wrap align-items-center justify-content-between gap-2">
-        <div>
-            <span class="fw-semibold"><i class="bi bi-diagram-3 me-1"></i>Akses Menu</span>
-            <div class="small text-body-secondary mt-1">
-                Centang menu yang boleh dibuka tiap role. Pengaturan ini juga menutup URL-nya,
+<div class="card mt-4 menu-access" id="menuAccess">
+    <div class="dt-card-header">
+        <div class="dt-card-title">
+            <h2><i class="bi bi-diagram-3 me-1"></i>Akses Menu</h2>
+            <p>
+                Centang menu yang boleh dibuka role terpilih. Pengaturan ini juga menutup URL-nya,
                 bukan sekadar menyembunyikan menu.
-            </div>
+            </p>
         </div>
-        <button class="btn btn-primary" id="saveMenuAccess">
-            <i class="bi bi-check2 me-1"></i>Simpan Akses
-        </button>
+        <div class="dt-card-actions">
+            <button class="btn btn-primary" id="saveMenuAccess">
+                <i class="bi bi-check2 me-1"></i>Simpan Akses
+            </button>
+        </div>
     </div>
 
-    <div class="table-wrap">
-        <table class="table table-hover align-middle mb-0" id="menuAccessTable">
-            <thead>
-                <tr>
-                    <th>Menu</th>
-                    @foreach ($accessRoles as $role)
-                        <th class="text-center">{{ $role['role_code'] }}</th>
-                    @endforeach
-                </tr>
-            </thead>
-            <tbody>
-                @php($currentGroup = '__none__')
-                @foreach ($accessMenus as $menu)
-                    @if (($menu['group_name'] ?? null) !== $currentGroup)
-                        @php($currentGroup = $menu['group_name'] ?? null)
-                        @if ($currentGroup)
-                            <tr class="table-group">
-                                <td colspan="{{ count($accessRoles) + 1 }}" class="fw-semibold small text-body-secondary">
-                                    {{ $currentGroup }}
-                                </td>
-                            </tr>
+    {{-- One role at a time: the screen keeps the same width whether there are
+         three roles or fifty, which the old role-per-column matrix could not. --}}
+    <div class="menu-access-toolbar">
+        <label class="form-label mb-0" for="accessRole">Role</label>
+        <select class="form-select" id="accessRole">
+            @foreach ($accessRoles as $role)
+                <option value="{{ $role['id'] }}" data-code="{{ $role['role_code'] }}">
+                    {{ $role['role_code'] }} — {{ $role['role_name'] }}@unless ($role['status'] === \App\Models\Role::ACTIVE) (nonaktif)@endunless
+                </option>
+            @endforeach
+        </select>
+        <span class="menu-access-count" id="accessCount"></span>
+    </div>
+
+    <div class="menu-access-list">
+        @php($currentGroup = '__none__')
+        @foreach ($accessMenus as $menu)
+            @if (($menu['group_name'] ?? null) !== $currentGroup)
+                @php($currentGroup = $menu['group_name'] ?? null)
+                <div class="menu-access-group" data-group="{{ $currentGroup ?: 'Umum' }}">
+                    <span>{{ $currentGroup ?: 'Umum' }}</span>
+                    <button type="button" class="btn btn-sm btn-link js-group-toggle"
+                            data-group="{{ $currentGroup ?: 'Umum' }}">Pilih semua</button>
+                </div>
+            @endif
+
+            <label class="menu-access-item" data-group="{{ $currentGroup ?: 'Umum' }}">
+                <input type="checkbox" class="form-check-input js-menu-access"
+                       data-menu="{{ $menu['id'] }}"
+                       data-locked="{{ $menu['is_locked'] ? 1 : 0 }}">
+                <span class="menu-access-label">
+                    <span class="menu-access-name">
+                        {{ $menu['menu_name'] }}
+                        @if ($menu['is_locked'])
+                            {{-- Flagged here as well as enforced server-side, so the box
+                                 the screen refuses to clear reads as deliberate. --}}
+                            <i class="bi bi-lock-fill text-body-secondary ms-1"
+                               title="Menu terkunci — ADMIN selalu punya akses"></i>
                         @endif
-                    @endif
-
-                    <tr data-menu="{{ $menu['id'] }}">
-                        <td>
-                            {{ $menu['menu_name'] }}
-                            @if ($menu['is_locked'])
-                                {{-- Flagged in the UI as well as enforced server-side, so the
-                                     disabled ADMIN box reads as deliberate rather than broken. --}}
-                                <i class="bi bi-lock-fill text-body-secondary ms-1"
-                                   title="Menu terkunci — ADMIN selalu punya akses"></i>
-                            @endif
-                            <div class="small text-body-secondary">{{ $menu['menu_code'] }}</div>
-                        </td>
-
-                        @foreach ($accessRoles as $role)
-                            @php($locked = $menu['is_locked'] && $role['role_code'] === \App\Models\Role::ADMIN)
-                            <td class="text-center">
-                                <input type="checkbox" class="form-check-input js-menu-access"
-                                       data-menu="{{ $menu['id'] }}" data-role="{{ $role['id'] }}"
-                                       @checked(in_array($role['id'], $menu['role_ids'], true))
-                                       @disabled($locked)>
-                            </td>
-                        @endforeach
-                    </tr>
-                @endforeach
-            </tbody>
-        </table>
+                        @if ($menu['is_action'])
+                            {{-- No sidebar entry to recognise it by, so the row says what it governs. --}}
+                            <span class="badge text-bg-light border ms-1 fw-normal">aksi</span>
+                        @endif
+                    </span>
+                    <code class="menu-access-code">{{ $menu['menu_code'] }}</code>
+                </span>
+            </label>
+        @endforeach
     </div>
 </div>
 
 <x-modal-form size="modal-md">
     <div class="col-12">
         <label class="form-label" for="role_code">Kode Role <span class="text-danger">*</span></label>
-        <input type="text" class="form-control text-uppercase" id="role_code" name="role_code" maxlength="30" required>
+        <input type="text" class="form-control text-uppercase" id="role_code" name="role_code"
+               placeholder="SUPERVISOR" maxlength="30" required>
         <div class="form-text">Huruf kapital, angka, dan garis bawah saja.</div>
     </div>
     <div class="col-12">
         <label class="form-label" for="role_name">Nama Role <span class="text-danger">*</span></label>
-        <input type="text" class="form-control" id="role_name" name="role_name" maxlength="100" required>
+        <input type="text" class="form-control" id="role_name" name="role_name"
+               placeholder="Supervisor Lapangan" maxlength="100" required>
     </div>
     <div class="col-12">
         <label class="form-label" for="status">Status <span class="text-danger">*</span></label>
@@ -125,6 +128,13 @@
         base: @json(route('roles.index')),
         menuAccess: @json(route('roles.menu-access.update')),
     };
+
+    // The current mapping, so switching role is instant instead of a fetch.
+    window.HRIS_MENU_ACCESS = @json($accessMenus);
+
+    // Only the signed-in user's own role changes what the sidebar should show,
+    // so only that save has to reload the page.
+    window.HRIS_MENU_ACCESS_SELF = @json(auth()->user()?->role_id);
 </script>
 <script src="{{ asset('js/crud.js') }}"></script>
 <script src="{{ asset('js/roles.js') }}"></script>

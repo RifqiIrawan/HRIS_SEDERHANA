@@ -24,6 +24,7 @@ class Menu extends Model
         'route_name',
         'route_patterns',
         'requires_employee',
+        'is_action',
         'is_locked',
         'sort_order',
         'status',
@@ -32,6 +33,7 @@ class Menu extends Model
     protected $casts = [
         'route_patterns' => 'array',
         'requires_employee' => 'boolean',
+        'is_action' => 'boolean',
         'is_locked' => 'boolean',
         'sort_order' => 'integer',
     ];

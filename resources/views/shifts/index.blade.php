@@ -40,11 +40,12 @@
 <x-modal-form>
     <div class="col-12 col-md-4">
         <label class="form-label" for="shift_code">Kode Shift <span class="text-danger">*</span></label>
-        <input type="text" class="form-control" id="shift_code" name="shift_code" maxlength="30" required>
+        <input type="text" class="form-control" id="shift_code" name="shift_code" placeholder="S4" maxlength="30" required>
     </div>
     <div class="col-12 col-md-8">
         <label class="form-label" for="shift_name">Nama Shift <span class="text-danger">*</span></label>
-        <input type="text" class="form-control" id="shift_name" name="shift_name" maxlength="100" required>
+        <input type="text" class="form-control" id="shift_name" name="shift_name"
+               placeholder="Shift Pagi" maxlength="100" required>
     </div>
     <div class="col-6 col-md-3">
         <label class="form-label" for="start_time">Jam Mulai <span class="text-danger">*</span></label>
@@ -56,7 +57,7 @@
     </div>
     <div class="col-12 col-md-3">
         <label class="form-label" for="late_tolerance_minutes">Toleransi (menit) <span class="text-danger">*</span></label>
-        <input type="number" class="form-control" id="late_tolerance_minutes" name="late_tolerance_minutes"
+        <input type="number" class="form-control" id="late_tolerance_minutes" name="late_tolerance_minutes" placeholder="15"
                min="0" max="240" required>
     </div>
     <div class="col-12 col-md-3">

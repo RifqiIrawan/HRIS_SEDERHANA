@@ -209,8 +209,14 @@ window.HRIS = (function ($) {
     /**
      * Fetches the shared select-option payload once per page load.
      * Pages with several dropdowns share the single response.
+     *
+     * Pass `force` to discard the cached response and fetch again, for the
+     * cases where a save has just invalidated part of it (e.g. saving a user
+     * changes which employees are still free to link).
      */
-    function lookups() {
+    function lookups(force) {
+        if (force) lookupPromise = null;
+
         if (!lookupPromise) {
             lookupPromise = api({ url: (window.HRIS_URLS && window.HRIS_URLS.lookups) || '/lookups' });
         }
@@ -221,8 +227,14 @@ window.HRIS = (function ($) {
     /**
      * Fills a <select> from a lookup list, preserving the current value when
      * the option still exists (so a reload does not silently reset a filter).
+     *
+     * @param {object} [config]
+     * @param {string} [config.valueKey='id']  which field becomes the option
+     *        value. The reference masters are selected by `code`, because that
+     *        is what the employees row stores.
      */
-    function fillSelect($select, items, placeholder) {
+    function fillSelect($select, items, placeholder, config) {
+        var valueKey = (config && config.valueKey) || 'id';
         var previous = $select.val();
         var options = [];
 
@@ -231,7 +243,7 @@ window.HRIS = (function ($) {
         }
 
         (items || []).forEach(function (item) {
-            options.push($('<option></option>').val(item.id).text(item.label).attr('data-code', item.code || ''));
+            options.push($('<option></option>').val(item[valueKey]).text(item.label).attr('data-code', item.code || ''));
         });
 
         $select.empty().append(options);
@@ -358,9 +370,25 @@ window.HRIS = (function ($) {
         processing: 'Memuat…',
         search: '',
         searchPlaceholder: 'Cari…',
-        paginate: { first: '«', last: '»', next: '›', previous: '‹' },
+        // Words rather than chevrons on the two buttons that are actually
+        // aimed at; the numbered ones speak for themselves.
+        paginate: { first: 'Awal', last: 'Akhir', next: 'Berikutnya', previous: 'Sebelumnya' },
         aria: { orderable: 'Urutkan kolom ini', orderableReverse: 'Balik urutan kolom ini' }
     };
+
+    /**
+     * Wraps a plain empty-table message in the illustrated empty state.
+     *
+     * Every module passes its own sentence ("Belum ada shift."), and none of
+     * them should have to know the markup around it — so the message goes in
+     * as text and comes back out as the state.
+     */
+    function emptyState(message, icon) {
+        return '<div class="dt-empty-state">' +
+            '<span class="dt-empty-icon"><i class="bi bi-' + (icon || 'inbox') + '"></i></span>' +
+            '<p class="dt-empty-title">' + esc(message) + '</p>' +
+            '</div>';
+    }
 
     /* DataTables' Bootstrap 5 integration does not add to the layout class
        names, it replaces them: `row` becomes "row mt-2 justify-content-between"
@@ -404,7 +432,19 @@ window.HRIS = (function ($) {
             // server would clamp is how a table ends up skipping rows.
             lengthMenu: [10, 25, 50, 100],
             pageLength: 10,
+            // DataTables otherwise measures the rendered rows and stamps a
+            // pixel width onto every column, locking the grid to whatever the
+            // first page happened to contain. Letting the browser lay the
+            // table out is what lets a long name column give room back to a
+            // short one when the page turns.
+            autoWidth: false,
             language: DT_LANGUAGE,
+            // Previous / 1 2 3 … 10 / Next, rather than the four chevron
+            // buttons of the full_numbers default.
+            pagingType: 'simple_numbers',
+            // The familiar arrangement: page size above the grid, row count
+            // and pager below it. The module's own filter bar sits above the
+            // page size, giving the card four clear bands.
             layout: {
                 topStart: 'pageLength',
                 topEnd: null,
@@ -412,6 +452,31 @@ window.HRIS = (function ($) {
                 bottomEnd: 'paging'
             }
         }, options || {});
+
+        // Applied after the merge, so a module that supplied its own message
+        // still gets the state built around it.
+        settings.language = settings.language || {};
+
+        if (settings.language.emptyTable) {
+            settings.language.emptyTable = emptyState(settings.language.emptyTable);
+        }
+
+        if (settings.language.zeroRecords) {
+            settings.language.zeroRecords = emptyState(settings.language.zeroRecords, 'search');
+        }
+
+        // The filter bar is authored in Blade so each page can supply its own
+        // controls, but it belongs on the same line as the page-size menu —
+        // the "Tampilkan N baris … Cari" row this design is modelled on.
+        // Handing the element to DataTables as a layout node is what puts it
+        // there, instead of leaving it as a second band above the toolbar.
+        var $filters = $(selector).closest('.card').find('.dt-filters').first();
+
+        if ($filters.length && settings.layout && settings.layout.topEnd === null) {
+            settings.layout.topEnd = function () {
+                return $filters.removeAttr('hidden')[0];
+            };
+        }
 
         var params = options && options.params;
         delete settings.params;
@@ -433,6 +498,13 @@ window.HRIS = (function ($) {
             toast(message || 'Gagal memuat data.', 'danger');
         });
 
+        // Marks the card while a fetch is in flight. The progress bar alone
+        // does not say that the rows underneath it are the previous request's
+        // answer; CSS fades them, on a delay so a fast response never blinks.
+        table.on('processing.dt', function (e, dtSettings, isProcessing) {
+            $(table.table().container()).toggleClass('dt-busy', !!isProcessing);
+        });
+
         return table;
     }
 
@@ -450,16 +522,29 @@ window.HRIS = (function ($) {
         var html = '';
 
         if (opts.edit) {
-            html += '<button class="btn btn-sm btn-outline-secondary js-edit" data-id="' + id +
-                '" title="Ubah"><i class="bi bi-pencil"></i></button> ';
+            html += '<button type="button" class="btn btn-sm btn-icon js-edit" data-id="' + id +
+                '" title="Ubah" aria-label="Ubah ' + esc(label) +
+                '"><i class="bi bi-pencil"></i></button>';
         }
 
         if (opts.remove) {
-            html += '<button class="btn btn-sm btn-outline-danger js-delete" data-id="' + id +
-                '" data-label="' + esc(label) + '" title="Hapus"><i class="bi bi-trash"></i></button>';
+            html += '<button type="button" class="btn btn-sm btn-icon btn-icon-danger js-delete" data-id="' + id +
+                '" data-label="' + esc(label) + '" title="Hapus" aria-label="Hapus ' + esc(label) +
+                '"><i class="bi bi-trash"></i></button>';
         }
 
-        return html;
+        return actionGroup(html);
+    }
+
+    /**
+     * Wraps row buttons so the group carries its own spacing and alignment,
+     * and so the column can shrink to fit them (see `td:has(> .row-actions)`
+     * in app.css). Nesting is harmless: a module with an extra action wraps
+     * its own button together with rowActions() output and the gaps still
+     * come out even.
+     */
+    function actionGroup(html) {
+        return '<span class="row-actions">' + html + '</span>';
     }
 
     /* ── Theme ──────────────────────────────────────────────────────── */
@@ -542,6 +627,8 @@ window.HRIS = (function ($) {
         dataTable: dataTable,
         dtLanguage: DT_LANGUAGE,
         rowActions: rowActions,
+        actionGroup: actionGroup,
+        emptyState: emptyState,
         debounce: debounce
     };
 })(jQuery);
