@@ -22,6 +22,21 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
+        /*
+         * Behind a TLS-terminating proxy — Tailscale serve, nginx, Cloudflare —
+         * the request reaching PHP is plain HTTP, and without this Laravel
+         * builds every asset() and route() URL as http:// while the browser is
+         * on https://. The browser then blocks its own stylesheets and scripts
+         * as mixed content and renders the raw HTML, which reads as the app
+         * being broken rather than as a proxy header being ignored.
+         *
+         * Scoped to loopback rather than '*': such a proxy always forwards from
+         * the same machine, and `artisan serve` binds 0.0.0.0 — so trusting
+         * every client would let anyone on the LAN spoof X-Forwarded-* and
+         * dictate the host Laravel signs its URLs with.
+         */
+        $middleware->trustProxies(at: ['127.0.0.1', '::1']);
+
         // Runs before every web request so the DataTables vocabulary is already
         // translated by the time a controller reads the query string.
         $middleware->web(append: [
