@@ -1,8 +1,8 @@
-# HRIS Juru Parkir — Technical Specification Final
+# ParkOps — Technical Specification Final
 ## MVP Budget ±Rp5 Jutaan
 
 **Version:** 1.0 Final  
-**Target:** HRIS sederhana untuk karyawan/juru parkir harian  
+**Target:** ParkOps sederhana untuk karyawan/juru parkir harian  
 **Backend + Frontend:** Laravel 13 + Blade  
 **Communication:** jQuery AJAX  
 **Database:** MySQL 8  

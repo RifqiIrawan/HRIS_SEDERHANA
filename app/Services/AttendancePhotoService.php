@@ -16,7 +16,7 @@ class AttendancePhotoService
 {
     public function store(Attendance $attendance, UploadedFile $file, string $type): AttendancePhoto
     {
-        $disk = Storage::disk(config('hris.photo.disk'));
+        $disk = Storage::disk(config('parkops.photo.disk'));
 
         // Read the file's own properties before storeAs() moves the temp file
         // out from under us. The MIME the client claims is only a hint;
@@ -41,7 +41,7 @@ class AttendancePhotoService
             $extension,
         );
 
-        $path = $file->storeAs($directory, $fileName, ['disk' => config('hris.photo.disk')]);
+        $path = $file->storeAs($directory, $fileName, ['disk' => config('parkops.photo.disk')]);
 
         // Replacing an existing photo of the same type (only reachable via an
         // HR correction) must not orphan the previous file.

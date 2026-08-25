@@ -283,16 +283,16 @@ class AttendanceController extends Controller
                 // employee find out by being refused.
                 'checkin_opens' => $this->windowLabel(
                     $roster,
-                    $roster->start_datetime?->copy()->subMinutes((int) config('hris.checkin_early_window_minutes')),
+                    $roster->start_datetime?->copy()->subMinutes((int) config('parkops.checkin_early_window_minutes')),
                 ),
                 'checkin_closes' => $this->windowLabel($roster, $this->checkInClosesAt($roster)),
                 'checkout_opens' => $this->windowLabel(
                     $roster,
-                    $roster->end_datetime?->copy()->subMinutes((int) config('hris.checkout_early_window_minutes')),
+                    $roster->end_datetime?->copy()->subMinutes((int) config('parkops.checkout_early_window_minutes')),
                 ),
                 'checkout_closes' => $this->windowLabel(
                     $roster,
-                    $roster->end_datetime?->copy()->addMinutes((int) config('hris.checkout_grace_minutes')),
+                    $roster->end_datetime?->copy()->addMinutes((int) config('parkops.checkout_grace_minutes')),
                 ),
             ] : null,
             'location' => $location ? [
@@ -320,7 +320,7 @@ class AttendanceController extends Controller
         }
 
         $byWindow = $roster->start_datetime->copy()
-            ->addMinutes((int) config('hris.checkin_late_window_minutes'));
+            ->addMinutes((int) config('parkops.checkin_late_window_minutes'));
 
         return $byWindow->lessThan($roster->end_datetime) ? $byWindow : $roster->end_datetime->copy();
     }

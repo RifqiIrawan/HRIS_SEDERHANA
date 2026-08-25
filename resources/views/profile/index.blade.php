@@ -94,23 +94,23 @@
             event.preventDefault();
 
             var $button = $('.js-save-password');
-            HRIS.clearErrors($form);
-            HRIS.busy($button, true, 'Menyimpan…');
+            ParkOps.clearErrors($form);
+            ParkOps.busy($button, true, 'Menyimpan…');
 
-            HRIS.api({
+            ParkOps.api({
                 url: @json(route('profile.password')),
                 type: 'POST',
                 data: $form.serialize() + '&_method=PUT'
             })
                 .done(function () {
-                    HRIS.toast('Password berhasil diubah.');
+                    ParkOps.toast('Password berhasil diubah.');
                     $form[0].reset();
                 })
                 .fail(function (error) {
-                    HRIS.showErrors($form, error.errors);
-                    HRIS.toast(error.message, 'danger');
+                    ParkOps.showErrors($form, error.errors);
+                    ParkOps.toast(error.message, 'danger');
                 })
-                .always(function () { HRIS.busy($button, false); });
+                .always(function () { ParkOps.busy($button, false); });
         });
     });
 </script>

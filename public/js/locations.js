@@ -23,7 +23,7 @@ jQuery(function ($) {
         if (map) return map;
 
         map = L.map('locationMap', { scrollWheelZoom: true })
-            .setView(window.HRIS_DEFAULTS.center, 16);
+            .setView(window.PARKOPS_DEFAULTS.center, 16);
 
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             maxZoom: 20,
@@ -75,12 +75,12 @@ jQuery(function ($) {
         if (recentre !== false) map.setView(position, Math.max(map.getZoom(), 18));
 
         // A point has now been chosen, so clear any "pilih titik" error.
-        HRIS.clearErrors($('#dataForm'));
+        ParkOps.clearErrors($('#dataForm'));
     }
 
     function currentRadius() {
         var value = parseFloat($radius.val());
-        return isNaN(value) || value <= 0 ? window.HRIS_DEFAULTS.radius : value;
+        return isNaN(value) || value <= 0 ? window.PARKOPS_DEFAULTS.radius : value;
     }
 
     function clearPoint() {
@@ -90,7 +90,7 @@ jQuery(function ($) {
         if (marker) { map.removeLayer(marker); marker = null; }
         if (circle) { map.removeLayer(circle); circle = null; }
 
-        map.setView(window.HRIS_DEFAULTS.center, 16);
+        map.setView(window.PARKOPS_DEFAULTS.center, 16);
     }
 
     // Redrawing the radius live makes "maksimal 10 meter" tangible instead of
@@ -101,24 +101,24 @@ jQuery(function ($) {
 
     $('#useMyLocation').on('click', function () {
         if (!navigator.geolocation) {
-            HRIS.toast('Browser ini tidak mendukung Geolocation.', 'warning');
+            ParkOps.toast('Browser ini tidak mendukung Geolocation.', 'warning');
             return;
         }
 
         var $button = $(this);
-        HRIS.busy($button, true, 'Mencari…');
+        ParkOps.busy($button, true, 'Mencari…');
 
         navigator.geolocation.getCurrentPosition(
             function (position) {
-                HRIS.busy($button, false);
+                ParkOps.busy($button, false);
                 ensureMap();
                 setPoint(position.coords.latitude, position.coords.longitude);
-                HRIS.toast('Titik diambil dari GPS perangkat ini (akurasi ±' +
+                ParkOps.toast('Titik diambil dari GPS perangkat ini (akurasi ±' +
                     Math.round(position.coords.accuracy) + ' m).', 'info');
             },
             function () {
-                HRIS.busy($button, false);
-                HRIS.toast('Gagal mengambil lokasi. Pastikan izin lokasi diaktifkan.', 'danger');
+                ParkOps.busy($button, false);
+                ParkOps.toast('Gagal mengambil lokasi. Pastikan izin lokasi diaktifkan.', 'danger');
             },
             { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
         );
@@ -139,13 +139,13 @@ jQuery(function ($) {
 
     /* ── CRUD ───────────────────────────────────────────────────────── */
 
-    HRIS.crud({
-        baseUrl: window.HRIS_URLS.base,
+    ParkOps.crud({
+        baseUrl: window.PARKOPS_URLS.base,
         filters: ['#searchInput', '#statusFilter'],
         labels: { create: 'Tambah Lokasi', edit: 'Ubah Lokasi' },
         defaults: {
-            radius_meter: window.HRIS_DEFAULTS.radius,
-            gps_accuracy_limit: window.HRIS_DEFAULTS.accuracy,
+            radius_meter: window.PARKOPS_DEFAULTS.radius,
+            gps_accuracy_limit: window.PARKOPS_DEFAULTS.accuracy,
             status: 'ACTIVE'
         },
         emptyMessage: 'Belum ada lokasi absensi.',
@@ -162,7 +162,7 @@ jQuery(function ($) {
 
         beforeSubmit: function ($form) {
             if (!$latitude.val() || !$longitude.val()) {
-                HRIS.toast('Tentukan titik lokasi pada peta terlebih dahulu.', 'warning');
+                ParkOps.toast('Tentukan titik lokasi pada peta terlebih dahulu.', 'warning');
                 return false;
             }
         },
@@ -171,13 +171,13 @@ jQuery(function ($) {
             {
                 data: 'location_code',
                 className: 'fw-semibold',
-                render: HRIS.esc
+                render: ParkOps.esc
             },
             {
                 data: 'location_name',
                 render: function (value, type, row) {
-                    return HRIS.esc(value) + (row.address
-                        ? '<div class="small text-body-secondary">' + HRIS.esc(row.address) + '</div>'
+                    return ParkOps.esc(value) + (row.address
+                        ? '<div class="small text-body-secondary">' + ParkOps.esc(row.address) + '</div>'
                         : '');
                 }
             },
@@ -186,23 +186,23 @@ jQuery(function ($) {
                 orderable: false,
                 className: 'small text-tabular',
                 render: function (value, type, row) {
-                    return HRIS.esc(value) + ', ' + HRIS.esc(row.longitude);
+                    return ParkOps.esc(value) + ', ' + ParkOps.esc(row.longitude);
                 }
             },
             {
                 data: 'radius_meter',
                 className: 'text-center text-tabular',
-                render: function (value) { return HRIS.esc(value) + ' m'; }
+                render: function (value) { return ParkOps.esc(value) + ' m'; }
             },
             {
                 data: 'gps_accuracy_limit',
                 className: 'text-center text-tabular',
-                render: function (value) { return HRIS.esc(value) + ' m'; }
+                render: function (value) { return ParkOps.esc(value) + ' m'; }
             },
             {
                 data: 'status',
                 className: 'text-center',
-                render: HRIS.statusBadge
+                render: ParkOps.statusBadge
             },
             {
                 data: null,
@@ -213,13 +213,13 @@ jQuery(function ($) {
 
                     // Wrapping the whole cell keeps the map link on the same
                     // rhythm as the edit/delete pair inside rowActions().
-                    return HRIS.actionGroup(
+                    return ParkOps.actionGroup(
                         '<a class="btn btn-sm btn-icon" target="_blank" rel="noopener"' +
                         ' title="Buka di peta" aria-label="Buka di peta"' +
                         ' href="https://www.openstreetmap.org/?mlat=' +
                         encodeURIComponent(row.latitude) + '&mlon=' + encodeURIComponent(row.longitude) +
                         '#map=19/' + coords + '"><i class="bi bi-map"></i></a>' +
-                        HRIS.rowActions(row.id, 'lokasi ' + row.location_name)
+                        ParkOps.rowActions(row.id, 'lokasi ' + row.location_name)
                     );
                 }
             }

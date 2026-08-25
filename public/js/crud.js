@@ -6,7 +6,7 @@
  * so that pattern lives here once and each module only supplies the parts that
  * genuinely differ: how a row renders, and how the form is filled for editing.
  */
-(function ($, HRIS) {
+(function ($, ParkOps) {
     'use strict';
 
     /**
@@ -22,7 +22,7 @@
      * @param {function} [config.onSaved]    (isCreate) => void, after a save succeeds
      * @param {object}   [config.table]      extra DataTables options
      */
-    HRIS.crud = function (config) {
+    ParkOps.crud = function (config) {
         var $table = $(config.tableSelector || '#dataTable');
         var $modal = $(config.modalSelector || '#dataModal');
         var $form = $(config.formSelector || '#dataForm');
@@ -54,7 +54,7 @@
         // DataTables owns paging, ordering and the request lifecycle from here:
         // it serialises draw/start/length/order itself, and discards a response
         // whose `draw` is stale, which is what the hand-rolled abort used to do.
-        var table = HRIS.dataTable($table, $.extend(true, {
+        var table = ParkOps.dataTable($table, $.extend(true, {
             ajax: {
                 url: config.baseUrl,
                 dataSrc: function (json) {
@@ -63,7 +63,7 @@
                 }
             },
             columns: config.columns,
-            language: $.extend({}, HRIS.dtLanguage, {
+            language: $.extend({}, ParkOps.dtLanguage, {
                 emptyTable: config.emptyMessage || 'Belum ada data.'
             }),
             params: filterParams
@@ -82,7 +82,7 @@
         function openCreate() {
             editingId = null;
             $form[0].reset();
-            HRIS.clearErrors($form);
+            ParkOps.clearErrors($form);
             $modal.find('.modal-title').text(labels.create);
 
             $.each(config.defaults || {}, function (name, value) {
@@ -95,11 +95,11 @@
         }
 
         function openEdit(id) {
-            HRIS.api({ url: config.baseUrl + '/' + id })
+            ParkOps.api({ url: config.baseUrl + '/' + id })
                 .done(function (item) {
                     editingId = id;
                     $form[0].reset();
-                    HRIS.clearErrors($form);
+                    ParkOps.clearErrors($form);
                     $modal.find('.modal-title').text(labels.edit);
 
                     // Anything whose name matches a key in the payload is filled
@@ -114,7 +114,7 @@
                     if (config.fill) config.fill($form, item);
                     if (modal) modal.show();
                 })
-                .fail(HRIS.handleError);
+                .fail(ParkOps.handleError);
         }
 
         function submit(event) {
@@ -122,8 +122,8 @@
 
             if (config.beforeSubmit && config.beforeSubmit($form) === false) return;
 
-            HRIS.clearErrors($form);
-            HRIS.busy($saveButton, true, 'Menyimpan…');
+            ParkOps.clearErrors($form);
+            ParkOps.busy($saveButton, true, 'Menyimpan…');
 
             var data = $form.serializeArray();
 
@@ -137,7 +137,7 @@
 
             if (editingId) data.push({ name: '_method', value: 'PUT' });
 
-            HRIS.api({
+            ParkOps.api({
                 url: editingId ? config.baseUrl + '/' + editingId : config.baseUrl,
                 type: 'POST',
                 data: $.param(data)
@@ -146,33 +146,33 @@
                     var wasCreate = !editingId;
 
                     if (modal) modal.hide();
-                    HRIS.toast(wasCreate ? 'Data berhasil disimpan.' : 'Data berhasil diperbarui.');
+                    ParkOps.toast(wasCreate ? 'Data berhasil disimpan.' : 'Data berhasil diperbarui.');
                     // An edit stays where it is; a new row may sort onto page one.
                     load(wasCreate);
 
                     if (config.onSaved) config.onSaved(wasCreate);
                 })
                 .fail(function (error) {
-                    HRIS.showErrors($form, error.errors);
-                    HRIS.toast(error.message, 'danger');
+                    ParkOps.showErrors($form, error.errors);
+                    ParkOps.toast(error.message, 'danger');
                 })
                 .always(function () {
-                    HRIS.busy($saveButton, false);
+                    ParkOps.busy($saveButton, false);
                 });
         }
 
         function remove(id, label) {
-            HRIS.confirm({
+            ParkOps.confirm({
                 title: 'Hapus data',
                 message: 'Hapus ' + (label || 'data ini') + '? Tindakan ini tidak dapat dibatalkan.',
                 confirmLabel: 'Ya, hapus'
             }).done(function () {
-                HRIS.api({ url: config.baseUrl + '/' + id, type: 'POST', data: { _method: 'DELETE' } })
+                ParkOps.api({ url: config.baseUrl + '/' + id, type: 'POST', data: { _method: 'DELETE' } })
                     .done(function () {
-                        HRIS.toast('Data berhasil dihapus.');
+                        ParkOps.toast('Data berhasil dihapus.');
                         load();
                     })
-                    .fail(HRIS.handleError);
+                    .fail(ParkOps.handleError);
             });
         }
 
@@ -192,7 +192,7 @@
             // so every filter change returns to page one.
             var handler = function () { load(true); };
 
-            $input.on(event, event === 'input' ? HRIS.debounce(handler, 400) : handler);
+            $input.on(event, event === 'input' ? ParkOps.debounce(handler, 400) : handler);
         });
 
         return {
@@ -202,4 +202,4 @@
             openEdit: openEdit
         };
     };
-})(jQuery, window.HRIS);
+})(jQuery, window.ParkOps);

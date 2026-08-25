@@ -38,7 +38,7 @@ class AttendancePhoto extends Model
 
     public function exists(): bool
     {
-        return Storage::disk(config('hris.photo.disk'))->exists($this->file_path);
+        return Storage::disk(config('parkops.photo.disk'))->exists($this->file_path);
     }
 
     /**

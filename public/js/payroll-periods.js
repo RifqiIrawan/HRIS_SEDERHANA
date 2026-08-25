@@ -2,8 +2,8 @@
 jQuery(function ($) {
     'use strict';
 
-    HRIS.crud({
-        baseUrl: window.HRIS_URLS.base,
+    ParkOps.crud({
+        baseUrl: window.PARKOPS_URLS.base,
         filters: ['#statusFilter'],
         labels: { create: 'Tambah Periode Payroll', edit: 'Ubah Periode Payroll' },
         emptyMessage: 'Belum ada periode payroll.',
@@ -39,19 +39,19 @@ jQuery(function ($) {
         },
 
         columns: [
-            { data: 'period_code', className: 'fw-semibold', render: HRIS.esc },
+            { data: 'period_code', className: 'fw-semibold', render: ParkOps.esc },
             {
                 data: 'period_name',
                 render: function (value, type, row) {
-                    return HRIS.esc(value) + (row.closed_at
-                        ? '<div class="small text-body-secondary">Ditutup ' + HRIS.esc(row.closed_at) + '</div>'
+                    return ParkOps.esc(value) + (row.closed_at
+                        ? '<div class="small text-body-secondary">Ditutup ' + ParkOps.esc(row.closed_at) + '</div>'
                         : '');
                 }
             },
-            { data: 'start_date', className: 'text-center small', render: HRIS.formatDate },
-            { data: 'end_date', className: 'text-center small', render: HRIS.formatDate },
-            { data: 'payrolls_count', orderable: false, className: 'text-center text-tabular', render: HRIS.esc },
-            { data: 'status', className: 'text-center', render: HRIS.statusBadge },
+            { data: 'start_date', className: 'text-center small', render: ParkOps.formatDate },
+            { data: 'end_date', className: 'text-center small', render: ParkOps.formatDate },
+            { data: 'payrolls_count', orderable: false, className: 'text-center text-tabular', render: ParkOps.esc },
+            { data: 'status', className: 'text-center', render: ParkOps.statusBadge },
             {
                 data: null,
                 orderable: false,
@@ -59,12 +59,12 @@ jQuery(function ($) {
                 render: function (row) {
                     // A closed period is frozen (spec §44): still openable and
                     // renameable, but no longer deletable.
-                    return HRIS.actionGroup(
+                    return ParkOps.actionGroup(
                         '<a class="btn btn-sm btn-icon btn-icon-accent" title="Buka payroll"' +
                         ' aria-label="Buka payroll" href="' +
-                        window.HRIS_URLS.payroll + '?period_id=' + row.id +
+                        window.PARKOPS_URLS.payroll + '?period_id=' + row.id +
                         '"><i class="bi bi-cash-stack"></i></a>' +
-                        HRIS.rowActions(row.id, 'periode ' + row.period_name, { remove: !!row.editable })
+                        ParkOps.rowActions(row.id, 'periode ' + row.period_name, { remove: !!row.editable })
                     );
                 }
             }

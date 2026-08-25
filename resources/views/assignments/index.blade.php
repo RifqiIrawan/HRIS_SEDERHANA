@@ -339,7 +339,7 @@
 
 @push('scripts')
 <script>
-    window.HRIS_URLS = {
+    window.PARKOPS_URLS = {
         base: @json(route('assignments.index')),
         lookups: @json(route('lookups')),
         rotation: @json(route('assignments.rotation.generate')),

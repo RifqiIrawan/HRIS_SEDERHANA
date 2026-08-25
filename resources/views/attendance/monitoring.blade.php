@@ -86,7 +86,7 @@
 
 @push('scripts')
 <script>
-    window.HRIS_URLS = {
+    window.PARKOPS_URLS = {
         base: @json(route('attendance.monitoring')),
         // Collection URL for the detail modal; the row id is appended to it.
         detail: @json(url('attendance')),
@@ -97,7 +97,7 @@
 <script src="{{ asset('js/attendance-list.js') }}"></script>
 <script>
     jQuery(function ($) {
-        var list = HRIS.attendanceList({ mode: 'monitoring', showEmployee: true });
+        var list = ParkOps.attendanceList({ mode: 'monitoring', showEmployee: true });
 
         $('#todayShortcut').on('click', function () {
             var today = new Date().toISOString().slice(0, 10);

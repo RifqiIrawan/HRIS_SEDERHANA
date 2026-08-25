@@ -59,17 +59,17 @@
 
 @push('scripts')
 <script>
-    window.HRIS_URLS = {
+    window.PARKOPS_URLS = {
         base: @json(route('attendance.history')),
         // Collection URL for the detail modal; the row id is appended to it.
         detail: @json(url('attendance')),
         lookups: @json(route('lookups'))
     };
-    window.HRIS_IS_HR = @json($isHr);
+    window.PARKOPS_IS_HR = @json($isHr);
 </script>
 <script src="{{ asset('js/crud.js') }}"></script>
 <script src="{{ asset('js/attendance-list.js') }}"></script>
 <script>
-    HRIS.attendanceList({ mode: 'history', showEmployee: window.HRIS_IS_HR });
+    ParkOps.attendanceList({ mode: 'history', showEmployee: window.PARKOPS_IS_HR });
 </script>
 @endpush

@@ -38,7 +38,7 @@ class AttendanceTest extends TestCase
     {
         parent::setUp();
 
-        Storage::fake(config('hris.photo.disk'));
+        Storage::fake(config('parkops.photo.disk'));
 
         // A Tuesday morning, ten minutes into the 06:00 shift.
         Carbon::setTestNow(Carbon::create(2026, 8, 11, 6, 10));
@@ -228,7 +228,7 @@ class AttendanceTest extends TestCase
     #[Test]
     public function with_enforcement_off_a_distant_reading_is_accepted_but_still_measured(): void
     {
-        config()->set('hris.enforce_geofence', false);
+        config()->set('parkops.enforce_geofence', false);
 
         $this->actingAs($this->user)
             ->postJson(route('attendance.check-in'), $this->payload(metres: 4000, accuracy: 900))
@@ -245,7 +245,7 @@ class AttendanceTest extends TestCase
     #[Test]
     public function enforcement_off_does_not_revive_an_inactive_location(): void
     {
-        config()->set('hris.enforce_geofence', false);
+        config()->set('parkops.enforce_geofence', false);
         $this->location->update(['status' => Location::INACTIVE]);
 
         $this->actingAs($this->user)
@@ -262,7 +262,7 @@ class AttendanceTest extends TestCase
             ->assertOk()
             ->assertJsonPath('data.enforce_geofence', true);
 
-        config()->set('hris.enforce_geofence', false);
+        config()->set('parkops.enforce_geofence', false);
 
         $this->actingAs($this->user)
             ->getJson(route('attendance.index'))
@@ -551,7 +551,7 @@ class AttendanceTest extends TestCase
 
         $this->assertNotNull($photo);
         $this->assertSame($photo->file_path, $attendance->check_in_photo);
-        Storage::disk(config('hris.photo.disk'))->assertExists($photo->file_path);
+        Storage::disk(config('parkops.photo.disk'))->assertExists($photo->file_path);
         $this->assertGreaterThan(0, $photo->file_size);
         $this->assertStringStartsWith('image/', $photo->mime_type);
     }
@@ -725,7 +725,7 @@ class AttendanceTest extends TestCase
      */
     private function fakeGeocoder(?array $address): void
     {
-        config()->set('hris.geocoding.enabled', true);
+        config()->set('parkops.geocoding.enabled', true);
 
         Http::fake([
             '*nominatim*' => $address === null

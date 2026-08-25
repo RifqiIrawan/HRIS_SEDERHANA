@@ -7,19 +7,25 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'Dashboard') · {{ config('app.name') }}</title>
 
+    {{-- SVG first for anything modern; the .ico stays as the fallback for
+         browsers that ignore it, and for the bare /favicon.ico request. --}}
+    <link rel="icon" href="{{ asset('img/parkops-icon.svg') }}" type="image/svg+xml">
+    <link rel="alternate icon" href="{{ asset('favicon.ico') }}" sizes="any">
+    <link rel="apple-touch-icon" href="{{ asset('img/parkops-icon.svg') }}">
+
     {{-- Applied before the first paint so a dark-mode reload never flashes
          white. Inline for that reason: an external file would arrive too late. --}}
     <script>
         (function () {
             try {
-                var saved = localStorage.getItem('hris-theme');
+                var saved = localStorage.getItem('parkops-theme');
                 if (saved === 'dark' || saved === 'light') {
                     document.documentElement.setAttribute('data-bs-theme', saved);
                 }
                 // Sidebar state rides on <html> for the same reason as the theme: it is
                 // the only element that exists this early, so the collapsed layout is in
                 // place before the first paint instead of snapping shut after it.
-                if (localStorage.getItem('hris-sidebar') === 'collapsed') {
+                if (localStorage.getItem('parkops-sidebar') === 'collapsed') {
                     document.documentElement.classList.add('sidebar-collapsed');
                 }
             } catch (e) { /* private mode — the default theme is fine */ }
@@ -28,7 +34,7 @@
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@500;600&display=swap">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="https://cdn.datatables.net/2.1.8/css/dataTables.bootstrap5.min.css">
@@ -65,7 +71,7 @@
     </div>
 </div>
 
-<div class="toast-container position-fixed top-0 end-0 p-3" id="hrisToasts" style="z-index:1090"></div>
+<div class="toast-container position-fixed top-0 end-0 p-3" id="parkopsToasts" style="z-index:1090"></div>
 
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>

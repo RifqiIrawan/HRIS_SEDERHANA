@@ -130,7 +130,7 @@
 
 @push('scripts')
 <script>
-    window.HRIS_URLS = {
+    window.PARKOPS_URLS = {
         base: @json(url('payroll')),
         lookups: @json(route('lookups')),
         isAdmin: @json(auth()->user()->isAdmin()),
@@ -140,7 +140,7 @@
              hiding the icon is presentation, not the access control itself. --}}
         slip: @json($canPrintSlip ? route('payroll.slip', ['payroll' => '__ID__']) : null)
     };
-    window.HRIS_SELECTED_PERIOD = @json(request()->integer('period_id') ?: null);
+    window.PARKOPS_SELECTED_PERIOD = @json(request()->integer('period_id') ?: null);
 </script>
 <script src="{{ asset('js/payroll.js') }}"></script>
 @endpush

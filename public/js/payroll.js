@@ -17,11 +17,11 @@ jQuery(function ($) {
     /* Server-side: the period header and the totals arrive on the same response
        as the rows, so the tiles above the table can never describe a different
        period than the rows below it. */
-    var table = HRIS.dataTable('#payrollTable', {
+    var table = ParkOps.dataTable('#payrollTable', {
         // Nothing to fetch until a period is chosen.
         deferLoading: 0,
         ajax: {
-            url: window.HRIS_URLS.base,
+            url: window.PARKOPS_URLS.base,
             dataSrc: function (json) {
                 period = json.period;
 
@@ -34,33 +34,33 @@ jQuery(function ($) {
         params: function () {
             return { search: $('#searchInput').val() || undefined };
         },
-        language: $.extend({}, HRIS.dtLanguage, {
+        language: $.extend({}, ParkOps.dtLanguage, {
             emptyTable: 'Belum ada baris payroll pada periode ini.'
         }),
         columns: [
             {
                 data: 'employee_name',
                 render: function (value, type, row) {
-                    return '<div class="fw-semibold small">' + HRIS.esc(value) + '</div>' +
+                    return '<div class="fw-semibold small">' + ParkOps.esc(value) + '</div>' +
                         '<div class="text-body-secondary" style="font-size:.72rem">' +
-                        HRIS.esc(row.employee_code) + '</div>';
+                        ParkOps.esc(row.employee_code) + '</div>';
                 }
             },
             { data: 'present_days', orderable: false, className: 'text-center text-tabular' },
             { data: 'late_days', orderable: false, className: 'text-center text-tabular' },
             { data: 'working_days', className: 'text-center text-tabular fw-semibold' },
-            { data: 'daily_rate', className: 'text-end text-tabular small', render: HRIS.formatRupiah },
-            { data: 'gross_salary', className: 'text-end text-tabular', render: HRIS.formatRupiah },
+            { data: 'daily_rate', className: 'text-end text-tabular small', render: ParkOps.formatRupiah },
+            { data: 'gross_salary', className: 'text-end text-tabular', render: ParkOps.formatRupiah },
             {
                 data: 'total_deduction',
                 className: 'text-end text-tabular',
                 render: function (value) {
                     return value > 0
-                        ? '<span class="text-danger">− ' + HRIS.formatRupiah(value) + '</span>'
+                        ? '<span class="text-danger">− ' + ParkOps.formatRupiah(value) + '</span>'
                         : '−';
                 }
             },
-            { data: 'net_salary', className: 'text-end text-tabular fw-semibold', render: HRIS.formatRupiah },
+            { data: 'net_salary', className: 'text-end text-tabular fw-semibold', render: ParkOps.formatRupiah },
             {
                 data: null,
                 orderable: false,
@@ -76,13 +76,13 @@ jQuery(function ($) {
                             '<i class="bi bi-dash-circle"></i></button>';
                     }
 
-                    if (window.HRIS_URLS.slip) {
+                    if (window.PARKOPS_URLS.slip) {
                         buttons += '<button type="button" class="btn btn-sm btn-icon js-slip" data-id="' +
                             row.id + '" title="Cetak slip gaji" aria-label="Cetak slip gaji ' +
-                            HRIS.esc(row.employee_name) + '"><i class="bi bi-printer"></i></button>';
+                            ParkOps.esc(row.employee_name) + '"><i class="bi bi-printer"></i></button>';
                     }
 
-                    return buttons ? HRIS.actionGroup(buttons) : '<span class="text-body-secondary small">−</span>';
+                    return buttons ? ParkOps.actionGroup(buttons) : '<span class="text-body-secondary small">−</span>';
                 }
             }
         ]
@@ -90,22 +90,22 @@ jQuery(function ($) {
 
     /* ── Period selector ────────────────────────────────────────────── */
 
-    HRIS.lookups()
+    ParkOps.lookups()
         .done(function (data) {
             var periods = (data.periods || []).map(function (p) {
                 return { id: p.id, code: p.code, label: p.label + ' (' + p.status + ')' };
             });
 
-            HRIS.fillSelect($('#periodSelect'), periods, periods.length ? null : 'Belum ada periode');
+            ParkOps.fillSelect($('#periodSelect'), periods, periods.length ? null : 'Belum ada periode');
 
-            if (window.HRIS_SELECTED_PERIOD) $('#periodSelect').val(window.HRIS_SELECTED_PERIOD);
+            if (window.PARKOPS_SELECTED_PERIOD) $('#periodSelect').val(window.PARKOPS_SELECTED_PERIOD);
 
             if ($('#periodSelect').val()) load(true);
         })
-        .fail(HRIS.handleError);
+        .fail(ParkOps.handleError);
 
     $('#periodSelect').on('change', function () { load(true); });
-    $('#searchInput').on('input', HRIS.debounce(function () { load(true); }, 400));
+    $('#searchInput').on('input', ParkOps.debounce(function () { load(true); }, 400));
 
     /**
      * Points the table at the selected period and draws it.
@@ -116,7 +116,7 @@ jQuery(function ($) {
         var periodId = $('#periodSelect').val();
         if (!periodId) return;
 
-        table.ajax.url(window.HRIS_URLS.base + '/' + periodId).load(null, resetPaging !== false);
+        table.ajax.url(window.PARKOPS_URLS.base + '/' + periodId).load(null, resetPaging !== false);
     }
 
     function renderPeriod(json) {
@@ -127,10 +127,10 @@ jQuery(function ($) {
 
         $('#generateButton').prop('disabled', !editable);
         $('#closeButton').prop('disabled', !processed);
-        $('#reopenButton').toggleClass('d-none', !(window.HRIS_URLS.isAdmin && period.status === 'CLOSED'));
+        $('#reopenButton').toggleClass('d-none', !(window.PARKOPS_URLS.isAdmin && period.status === 'CLOSED'));
 
         var message = period.period_name + ' · ' +
-            HRIS.formatDate(period.start_date) + ' — ' + HRIS.formatDate(period.end_date) +
+            ParkOps.formatDate(period.start_date) + ' — ' + ParkOps.formatDate(period.end_date) +
             ' · status ' + period.status;
 
         if (!editable) {
@@ -147,7 +147,7 @@ jQuery(function ($) {
             var key = $(this).data('total');
             var value = summary ? summary[key] : 0;
 
-            $(this).text($(this).data('money') ? HRIS.formatRupiah(value) : HRIS.formatNumber(value));
+            $(this).text($(this).data('money') ? ParkOps.formatRupiah(value) : ParkOps.formatNumber(value));
         });
     }
 
@@ -156,64 +156,64 @@ jQuery(function ($) {
     $('#generateButton').on('click', function () {
         var $button = $(this);
 
-        HRIS.confirm({
+        ParkOps.confirm({
             title: 'Generate payroll',
             message: 'Hitung ulang payroll untuk semua karyawan aktif pada periode ' + period.period_name +
                 '? Potongan yang sudah diinput tetap dipertahankan.',
             confirmLabel: 'Ya, generate',
             variant: 'primary'
         }).done(function () {
-            HRIS.busy($button, true, 'Menghitung…');
+            ParkOps.busy($button, true, 'Menghitung…');
 
-            HRIS.api({ url: window.HRIS_URLS.base + '/' + period.id + '/generate', type: 'POST' })
+            ParkOps.api({ url: window.PARKOPS_URLS.base + '/' + period.id + '/generate', type: 'POST' })
                 .done(function (summary) {
-                    HRIS.toast('Payroll digenerate untuk ' + summary.employees + ' karyawan.');
+                    ParkOps.toast('Payroll digenerate untuk ' + summary.employees + ' karyawan.');
                     load();
                 })
-                .fail(function (error) { HRIS.toast(error.message, 'danger'); })
-                .always(function () { HRIS.busy($button, false); });
+                .fail(function (error) { ParkOps.toast(error.message, 'danger'); })
+                .always(function () { ParkOps.busy($button, false); });
         });
     });
 
     $('#closeButton').on('click', function () {
         var $button = $(this);
 
-        HRIS.confirm({
+        ParkOps.confirm({
             title: 'Tutup periode',
             message: 'Tutup periode ' + period.period_name +
                 '? Setelah ditutup payroll tidak dapat dihitung ulang tanpa dibuka kembali oleh ADMIN.',
             confirmLabel: 'Ya, tutup periode'
         }).done(function () {
-            HRIS.busy($button, true, 'Menutup…');
+            ParkOps.busy($button, true, 'Menutup…');
 
-            HRIS.api({ url: window.HRIS_URLS.base + '/' + period.id + '/close', type: 'POST' })
+            ParkOps.api({ url: window.PARKOPS_URLS.base + '/' + period.id + '/close', type: 'POST' })
                 .done(function () {
-                    HRIS.toast('Periode payroll ditutup.');
+                    ParkOps.toast('Periode payroll ditutup.');
                     load();
                 })
-                .fail(function (error) { HRIS.toast(error.message, 'danger'); })
-                .always(function () { HRIS.busy($button, false); });
+                .fail(function (error) { ParkOps.toast(error.message, 'danger'); })
+                .always(function () { ParkOps.busy($button, false); });
         });
     });
 
     $('#reopenButton').on('click', function () {
         var $button = $(this);
 
-        HRIS.confirm({
+        ParkOps.confirm({
             title: 'Buka kembali periode',
             message: 'Buka kembali periode ' + period.period_name + ' agar dapat dihitung ulang?',
             confirmLabel: 'Ya, buka kembali',
             variant: 'warning'
         }).done(function () {
-            HRIS.busy($button, true, 'Membuka…');
+            ParkOps.busy($button, true, 'Membuka…');
 
-            HRIS.api({ url: window.HRIS_URLS.base + '/' + period.id + '/reopen', type: 'POST' })
+            ParkOps.api({ url: window.PARKOPS_URLS.base + '/' + period.id + '/reopen', type: 'POST' })
                 .done(function () {
-                    HRIS.toast('Periode dibuka kembali.');
+                    ParkOps.toast('Periode dibuka kembali.');
                     load();
                 })
-                .fail(function (error) { HRIS.toast(error.message, 'danger'); })
-                .always(function () { HRIS.busy($button, false); });
+                .fail(function (error) { ParkOps.toast(error.message, 'danger'); })
+                .always(function () { ParkOps.busy($button, false); });
         });
     });
 
@@ -222,7 +222,7 @@ jQuery(function ($) {
     // A new tab rather than a modal: the slip is meant for the printer, and
     // the print dialog should not drag this page's sidebar and table along.
     $('#payrollTable').on('click', '.js-slip', function () {
-        window.open(window.HRIS_URLS.slip.replace('__ID__', $(this).data('id')), '_blank', 'noopener');
+        window.open(window.PARKOPS_URLS.slip.replace('__ID__', $(this).data('id')), '_blank', 'noopener');
     });
 
     /* ── Deductions ─────────────────────────────────────────────────── */
@@ -236,7 +236,7 @@ jQuery(function ($) {
 
         $('#deductionContext').text(
             currentPayroll.employee_code + ' — ' + currentPayroll.employee_name +
-            ' · Gross ' + HRIS.formatRupiah(currentPayroll.gross_salary)
+            ' · Gross ' + ParkOps.formatRupiah(currentPayroll.gross_salary)
         );
 
         renderDeductions();
@@ -256,8 +256,8 @@ jQuery(function ($) {
 
         $('#deductionList').html(details.map(function (d) {
             return '<tr>' +
-                '<td>' + HRIS.esc(d.description) + '</td>' +
-                '<td class="text-end text-tabular">' + HRIS.formatRupiah(d.amount) + '</td>' +
+                '<td>' + ParkOps.esc(d.description) + '</td>' +
+                '<td class="text-end text-tabular">' + ParkOps.formatRupiah(d.amount) + '</td>' +
                 '<td class="text-end">' +
                 '<button type="button" class="btn btn-sm btn-icon btn-icon-danger js-remove-deduction"' +
                 ' data-id="' + d.id + '" title="Hapus potongan" aria-label="Hapus potongan">' +
@@ -284,10 +284,10 @@ jQuery(function ($) {
         event.preventDefault();
 
         var $button = $('.js-add-deduction');
-        HRIS.busy($button, true, '…');
+        ParkOps.busy($button, true, '…');
 
-        HRIS.api({
-            url: window.HRIS_URLS.base + '/' + currentPayroll.id + '/deduction',
+        ParkOps.api({
+            url: window.PARKOPS_URLS.base + '/' + currentPayroll.id + '/deduction',
             type: 'POST',
             data: {
                 description: $('#deduction_description').val(),
@@ -295,29 +295,29 @@ jQuery(function ($) {
             }
         })
             .done(function (updated) {
-                HRIS.toast('Potongan ditambahkan.');
+                ParkOps.toast('Potongan ditambahkan.');
                 $('#deductionForm')[0].reset();
                 applyUpdatedPayroll(updated);
             })
             .fail(function (error) {
-                HRIS.showErrors($('#deductionForm'), error.errors);
-                HRIS.toast(error.message, 'danger');
+                ParkOps.showErrors($('#deductionForm'), error.errors);
+                ParkOps.toast(error.message, 'danger');
             })
-            .always(function () { HRIS.busy($button, false); });
+            .always(function () { ParkOps.busy($button, false); });
     });
 
     $('#deductionList').on('click', '.js-remove-deduction', function () {
         var id = $(this).data('id');
 
-        HRIS.api({
-            url: window.HRIS_URLS.base + '/detail/' + id,
+        ParkOps.api({
+            url: window.PARKOPS_URLS.base + '/detail/' + id,
             type: 'POST',
             data: { _method: 'DELETE' }
         })
             .done(function (updated) {
-                HRIS.toast('Potongan dihapus.');
+                ParkOps.toast('Potongan dihapus.');
                 applyUpdatedPayroll(updated);
             })
-            .fail(function (error) { HRIS.toast(error.message, 'danger'); });
+            .fail(function (error) { ParkOps.toast(error.message, 'danger'); });
     });
 });

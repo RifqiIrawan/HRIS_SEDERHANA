@@ -1,6 +1,6 @@
-# HRIS Juru Parkir
+# ParkOps
 
-Aplikasi HRIS sederhana untuk pengelolaan juru parkir harian: absensi berbasis
+Aplikasi HRIS untuk pengelolaan juru parkir harian: absensi berbasis
 GPS dengan foto dan validasi geofence, penjadwalan shift, sampai payroll harian
 dan laporan.
 
@@ -100,13 +100,13 @@ password `password`.
 
 | Email | Role | Akses |
 |---|---|---|
-| `admin@hris.test` | ADMIN | Seluruh modul |
-| `hr@hris.test` | HR | Modul operasional (tanpa User & Role) |
-| `jp001@hris.test` … `jp006@hris.test` | EMPLOYEE | Absensi dan riwayat sendiri |
+| `admin@parkops.test` | ADMIN | Seluruh modul |
+| `hr@parkops.test` | HR | Modul operasional (tanpa User & Role) |
+| `jp001@parkops.test` … `jp006@parkops.test` | EMPLOYEE | Absensi dan riwayat sendiri |
 
 > Halaman absensi (`/attendance`) hanya bisa dibuka akun yang tertaut ke data
 > karyawan. Akun `admin` dan `hr` bawaan seeder tidak tertaut, jadi gunakan
-> `jp001@hris.test` untuk mencoba layar check-in.
+> `jp001@parkops.test` untuk mencoba layar check-in.
 
 ⚠️ Password di atas adalah default pengembangan. **Ganti sebelum dipakai di
 lingkungan selain komputer lokal.**
@@ -125,7 +125,7 @@ Seeder menyiapkan 3 shift (termasuk shift malam lintas hari), 3 lokasi parkir,
 Roster dan absensi contoh ikut dibuat secara default. Untuk melewatinya:
 
 ```bash
-HRIS_SEED_DEMO=false php artisan migrate:fresh --seed
+PARKOPS_SEED_DEMO=false php artisan migrate:fresh --seed
 ```
 
 ---
@@ -134,16 +134,16 @@ HRIS_SEED_DEMO=false php artisan migrate:fresh --seed
 
 Ambang geofence dan absensi diatur lewat `.env`, dengan nilai per-lokasi di
 tabel `locations` yang selalu menang bila diisi. Selengkapnya di
-`config/hris.php`.
+`config/parkops.php`.
 
 | Variabel | Default | Keterangan |
 |---|---|---|
-| `HRIS_DEFAULT_RADIUS_METER` | `10` | Radius absensi (meter) |
-| `HRIS_DEFAULT_GPS_ACCURACY_LIMIT` | `20` | Batas akurasi GPS yang diterima (meter) |
-| `HRIS_DEFAULT_LATE_TOLERANCE_MINUTES` | `15` | Toleransi keterlambatan (menit) |
-| `HRIS_CHECKIN_EARLY_WINDOW_MINUTES` | `120` | Seberapa awal check-in dibuka sebelum shift |
-| `HRIS_CHECKOUT_GRACE_MINUTES` | `180` | Tenggang check-out setelah shift berakhir |
-| `HRIS_ATTENDANCE_PHOTO_MAX_KB` | `5120` | Ukuran maksimal foto absensi |
+| `PARKOPS_DEFAULT_RADIUS_METER` | `10` | Radius absensi (meter) |
+| `PARKOPS_DEFAULT_GPS_ACCURACY_LIMIT` | `20` | Batas akurasi GPS yang diterima (meter) |
+| `PARKOPS_DEFAULT_LATE_TOLERANCE_MINUTES` | `15` | Toleransi keterlambatan (menit) |
+| `PARKOPS_CHECKIN_EARLY_WINDOW_MINUTES` | `120` | Seberapa awal check-in dibuka sebelum shift |
+| `PARKOPS_CHECKOUT_GRACE_MINUTES` | `180` | Tenggang check-out setelah shift berakhir |
+| `PARKOPS_ATTENDANCE_PHOTO_MAX_KB` | `5120` | Ukuran maksimal foto absensi |
 
 ---
 
@@ -206,5 +206,5 @@ tests/
 ```
 
 Spesifikasi fungsional lengkap ada di
-[`HRIS_Juru_Parkir_Laravel13_Blade_AJAX_MVP.md`](HRIS_Juru_Parkir_Laravel13_Blade_AJAX_MVP.md);
+[`PARKOPS_Juru_Parkir_Laravel13_Blade_AJAX_MVP.md`](PARKOPS_Juru_Parkir_Laravel13_Blade_AJAX_MVP.md);
 komentar di kode merujuk ke nomor pasal dokumen tersebut.

@@ -3,22 +3,22 @@ jQuery(function ($) {
     'use strict';
 
     // Filters and form selects share one lookup response.
-    HRIS.lookups()
+    ParkOps.lookups()
         .done(function (data) {
-            HRIS.fillSelect($('#locationFilter'), data.locations, 'Semua Lokasi');
-            HRIS.fillSelect($('#shiftFilter'), data.shifts, 'Semua Shift');
+            ParkOps.fillSelect($('#locationFilter'), data.locations, 'Semua Lokasi');
+            ParkOps.fillSelect($('#shiftFilter'), data.shifts, 'Semua Shift');
 
-            HRIS.fillSelect($('#employee_id'), data.employees, 'Pilih karyawan…');
-            HRIS.fillSelect($('#location_id'), data.locations, 'Pilih lokasi…');
-            HRIS.fillSelect($('#shift_id'), data.shifts, 'Pilih shift…');
+            ParkOps.fillSelect($('#employee_id'), data.employees, 'Pilih karyawan…');
+            ParkOps.fillSelect($('#location_id'), data.locations, 'Pilih lokasi…');
+            ParkOps.fillSelect($('#shift_id'), data.shifts, 'Pilih shift…');
         })
-        .fail(HRIS.handleError);
+        .fail(ParkOps.handleError);
 
     // Exposed so the Detail Shift dialog can open one cycle for editing: the
     // list row is a whole rotation now, so a single assignment can only be
     // reached from the breakdown.
-    window.HRIS_ASSIGNMENT_CRUD = HRIS.crud({
-        baseUrl: window.HRIS_URLS.base,
+    window.PARKOPS_ASSIGNMENT_CRUD = ParkOps.crud({
+        baseUrl: window.PARKOPS_URLS.base,
         filters: ['#searchInput', '#locationFilter', '#shiftFilter', '#statusFilter'],
         labels: { create: 'Tambah Assignment', edit: 'Ubah Assignment' },
         defaults: { status: 'ACTIVE' },
@@ -31,11 +31,11 @@ jQuery(function ($) {
             {
                 data: 'employee_name',
                 render: function (value, type, row) {
-                    return '<div class="fw-semibold">' + HRIS.esc(value) + '</div>' +
-                        '<div class="small text-body-secondary">' + HRIS.esc(row.employee_code) + '</div>';
+                    return '<div class="fw-semibold">' + ParkOps.esc(value) + '</div>' +
+                        '<div class="small text-body-secondary">' + ParkOps.esc(row.employee_code) + '</div>';
                 }
             },
-            { data: 'location_name', orderable: false, render: HRIS.esc },
+            { data: 'location_name', orderable: false, render: ParkOps.esc },
             {
                 data: 'shift_name',
                 orderable: false,
@@ -45,28 +45,28 @@ jQuery(function ($) {
                     // row never reads as a single fixed assignment.
                     var cycles = row.cycles > 1
                         ? '<div class="small text-body-secondary">' + row.cycles + ' siklus · ' +
-                          HRIS.esc((row.rotation || []).join(' → ')) + '</div>'
+                          ParkOps.esc((row.rotation || []).join(' → ')) + '</div>'
                         : '';
 
-                    return '<span class="badge text-bg-primary">' + HRIS.esc(row.shift_code) + '</span> ' +
-                        HRIS.esc(value) + cycles;
+                    return '<span class="badge text-bg-primary">' + ParkOps.esc(row.shift_code) + '</span> ' +
+                        ParkOps.esc(value) + cycles;
                 }
             },
             {
                 data: 'start_date',
                 className: 'text-center small',
-                render: HRIS.formatDate
+                render: ParkOps.formatDate
             },
             {
                 data: 'end_date',
                 className: 'text-center small',
                 render: function (value) {
                     return value
-                        ? HRIS.formatDate(value)
+                        ? ParkOps.formatDate(value)
                         : '<span class="text-body-secondary">seterusnya</span>';
                 }
             },
-            { data: 'status', orderable: false, className: 'text-center', render: HRIS.statusBadge },
+            { data: 'status', orderable: false, className: 'text-center', render: ParkOps.statusBadge },
             {
                 data: null,
                 orderable: false,
@@ -77,16 +77,16 @@ jQuery(function ($) {
                     // a single assignment to point at.
                     // Detail Shift keeps its label — it is the row's primary
                     // action and reads as a destination, not an icon puzzle.
-                    return HRIS.actionGroup(
+                    return ParkOps.actionGroup(
                         '<button type="button" class="btn btn-sm btn-icon btn-icon-label js-shift-detail"' +
                         ' data-employee="' + row.employee_id + '"' +
-                        ' data-name="' + HRIS.esc(row.employee_name) + '"' +
-                        ' data-code="' + HRIS.esc(row.employee_code) + '"' +
-                        ' data-start="' + HRIS.esc(row.start_date) + '"' +
+                        ' data-name="' + ParkOps.esc(row.employee_name) + '"' +
+                        ' data-code="' + ParkOps.esc(row.employee_code) + '"' +
+                        ' data-start="' + ParkOps.esc(row.start_date) + '"' +
                         ' title="Detail Shift"><i class="bi bi-calendar-week"></i>Detail Shift</button>' +
                         '<button type="button" class="btn btn-sm btn-icon btn-icon-danger js-delete-rotation"' +
                         ' data-employee="' + row.employee_id + '"' +
-                        ' data-name="' + HRIS.esc(row.employee_name) + '"' +
+                        ' data-name="' + ParkOps.esc(row.employee_name) + '"' +
                         ' data-cycles="' + row.cycles + '"' +
                         ' title="Hapus semua assignment"' +
                         ' aria-label="Hapus semua assignment"><i class="bi bi-trash"></i></button>'
@@ -105,34 +105,34 @@ jQuery(function ($) {
         var $button = $(this);
         var cycles = parseInt($button.data('cycles'), 10) || 0;
 
-        HRIS.confirm({
+        ParkOps.confirm({
             title: 'Hapus assignment',
             message: 'Hapus ' + cycles + ' assignment milik ' + $button.data('name') +
                 ' beserta jadwal hariannya di Shift Roster? ' +
                 'Hari yang sudah memiliki absensi tidak akan dihapus.',
             confirmLabel: 'Ya, hapus'
         }).done(function () {
-            HRIS.api({
-                url: window.HRIS_URLS.employeeShifts + '/' + $button.data('employee'),
+            ParkOps.api({
+                url: window.PARKOPS_URLS.employeeShifts + '/' + $button.data('employee'),
                 type: 'POST',
                 data: { _method: 'DELETE' }
             })
                 .done(function (result) {
-                    HRIS.toast(
+                    ParkOps.toast(
                         result.assignments + ' assignment dan ' + result.rosters +
                         ' jadwal harian dihapus.'
                     );
 
                     if (result.kept_with_attendance > 0) {
-                        HRIS.toast(
+                        ParkOps.toast(
                             result.kept_with_attendance + ' hari dipertahankan karena sudah ada absensi.',
                             'warning'
                         );
                     }
 
-                    window.HRIS_ASSIGNMENT_CRUD.reload();
+                    window.PARKOPS_ASSIGNMENT_CRUD.reload();
                 })
-                .fail(HRIS.handleError);
+                .fail(ParkOps.handleError);
         });
     });
 });

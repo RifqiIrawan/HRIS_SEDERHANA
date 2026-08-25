@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 240" width="2040" height="720">
+<g transform="translate(40,45)">
+<rect x="0" y="0" width="150" height="150" rx="28" fill="#1f4fd8"/>
+<circle cx="70" cy="54" r="20" fill="#ffffff"/>
+<path d="M32 122 C32 92 48 82 70 82 C92 82 108 92 108 122 Z" fill="#ffffff"/>
+<circle cx="110" cy="102" r="22" fill="#f59e0b"/>
+<path d="M102 90 H113 A8 8 0 0 1 113 106 H108 V114 H102 Z M108 96 V100 H112 A2 2 0 0 0 112 96 Z" fill="#111827"/>
+</g>
+<text x="220" y="135" font-family="Poppins" font-size="56" font-weight="500" fill="#111827">Park<tspan fill="#1f4fd8">Ops</tspan></text>
+<text x="222" y="167" font-family="Poppins" font-size="15" letter-spacing="2" fill="#6b7280">Parking operations management</text>
+</svg>

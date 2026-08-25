@@ -1,11 +1,11 @@
 /*
- * HRIS Juru Parkir — shared frontend helpers (spec §30, §55).
+ * ParkOps — shared frontend helpers (spec §30, §55).
  *
- * Every module talks to Laravel through HRIS.api(), so the CSRF header, the
+ * Every module talks to Laravel through ParkOps.api(), so the CSRF header, the
  * { success, message, data } envelope and error surfacing are handled once
  * here instead of being re-implemented per page.
  */
-window.HRIS = (function ($) {
+window.ParkOps = (function ($) {
     'use strict';
 
     // Spec §55 — attach the CSRF token to every request jQuery makes.
@@ -51,7 +51,7 @@ window.HRIS = (function ($) {
         // .text() rather than string concatenation: server messages can echo
         // user-supplied names and must never be parsed as HTML.
         $toast.find('span').text(message);
-        $('#hrisToasts').append($toast);
+        $('#parkopsToasts').append($toast);
 
         var instance = new bootstrap.Toast($toast[0], { delay: variant === 'danger' ? 6000 : 3500 });
         instance.show();
@@ -218,7 +218,7 @@ window.HRIS = (function ($) {
         if (force) lookupPromise = null;
 
         if (!lookupPromise) {
-            lookupPromise = api({ url: (window.HRIS_URLS && window.HRIS_URLS.lookups) || '/lookups' });
+            lookupPromise = api({ url: (window.PARKOPS_URLS && window.PARKOPS_URLS.lookups) || '/lookups' });
         }
 
         return lookupPromise;
@@ -296,12 +296,12 @@ window.HRIS = (function ($) {
         var modal = bootstrap.Modal.getOrCreateInstance($confirmModal[0]);
         var confirmed = false;
 
-        $confirmModal.off('.hrisConfirm');
-        $confirmModal.on('click.hrisConfirm', '.js-confirm', function () {
+        $confirmModal.off('.parkopsConfirm');
+        $confirmModal.on('click.parkopsConfirm', '.js-confirm', function () {
             confirmed = true;
             modal.hide();
         });
-        $confirmModal.on('hidden.bs.modal.hrisConfirm', function () {
+        $confirmModal.on('hidden.bs.modal.parkopsConfirm', function () {
             if (confirmed) deferred.resolve(); else deferred.reject();
         });
 
@@ -509,7 +509,7 @@ window.HRIS = (function ($) {
     }
 
     /**
-     * The edit/delete pair every master-data row ends with. HRIS.crud() binds
+     * The edit/delete pair every master-data row ends with. ParkOps.crud() binds
      * the click handlers by class, so the markup only has to carry the id and
      * the label the delete confirmation quotes back to the user.
      *
@@ -547,6 +547,56 @@ window.HRIS = (function ($) {
         return '<span class="row-actions">' + html + '</span>';
     }
 
+    /*
+     * A dropdown inside a row sits inside DataTables' horizontal scroll
+     * container, which would clip it. Popper's fixed strategy lifts the menu
+     * out of that box — a plain overflow ancestor cannot clip a fixed-position
+     * element — and it is declared as data rather than wired up in JS because
+     * DataTables replaces every row on each draw, leaving nothing stable to
+     * initialise against.
+     */
+    var POPPER_ESCAPES_SCROLLER = ' data-bs-popper-config=\'{"strategy":"fixed"}\'';
+
+    /**
+     * A single kebab button opening a labelled menu, for rows whose actions are
+     * more than an edit and a delete. Three unexplained icons per row is a
+     * quiz; a menu names each one, and costs one narrow column instead of three.
+     *
+     * @param {Array} items  entries, or '-' for a divider. Each entry is
+     *        { label, icon, className, danger, disabled, data } — `data`
+     *        becomes data-* attributes and `className` is what the calling
+     *        module binds its click handler to.
+     */
+    function rowMenu(items) {
+        var html = '<div class="dropdown row-menu">' +
+            '<button type="button" class="btn btn-sm btn-icon" data-bs-toggle="dropdown"' +
+            POPPER_ESCAPES_SCROLLER +
+            ' aria-expanded="false" aria-label="Aksi baris" title="Aksi">' +
+            '<i class="bi bi-three-dots-vertical"></i></button>' +
+            '<ul class="dropdown-menu dropdown-menu-end">';
+
+        (items || []).forEach(function (item) {
+            if (item === '-') {
+                html += '<li><hr class="dropdown-divider"></li>';
+                return;
+            }
+
+            var attrs = '';
+
+            $.each(item.data || {}, function (key, value) {
+                attrs += ' data-' + key + '="' + esc(value) + '"';
+            });
+
+            html += '<li><button type="button" class="dropdown-item ' +
+                (item.className || '') + (item.danger ? ' dropdown-item-danger' : '') + '"' +
+                (item.disabled ? ' disabled' : '') + attrs + '>' +
+                (item.icon ? '<i class="bi bi-' + item.icon + '"></i>' : '') +
+                esc(item.label) + '</button></li>';
+        });
+
+        return html + '</ul></div>';
+    }
+
     /* ── Theme ──────────────────────────────────────────────────────── */
 
     function applyTheme(theme) {
@@ -556,7 +606,7 @@ window.HRIS = (function ($) {
             .toggleClass('bi-moon-stars', theme === 'light')
             .toggleClass('bi-sun', theme === 'dark');
 
-        try { localStorage.setItem('hris-theme', theme); } catch (e) { /* ignore */ }
+        try { localStorage.setItem('parkops-theme', theme); } catch (e) { /* ignore */ }
     }
 
     /* ── Sidebar ────────────────────────────────────────────────────── */
@@ -571,7 +621,7 @@ window.HRIS = (function ($) {
         }).get();
 
         try {
-            localStorage.setItem('hris-sidebar-groups', JSON.stringify(closed));
+            localStorage.setItem('parkops-sidebar-groups', JSON.stringify(closed));
         } catch (e) { /* ignore — the menu still works, it just will not persist */ }
     }
 
@@ -586,7 +636,7 @@ window.HRIS = (function ($) {
         $(document).on('click', '.js-sidebar-toggle', function () {
             var collapsed = document.documentElement.classList.toggle('sidebar-collapsed');
             try {
-                localStorage.setItem('hris-sidebar', collapsed ? 'collapsed' : 'expanded');
+                localStorage.setItem('parkops-sidebar', collapsed ? 'collapsed' : 'expanded');
             } catch (e) { /* ignore */ }
         });
 
@@ -628,6 +678,7 @@ window.HRIS = (function ($) {
         dtLanguage: DT_LANGUAGE,
         rowActions: rowActions,
         actionGroup: actionGroup,
+        rowMenu: rowMenu,
         emptyState: emptyState,
         debounce: debounce
     };

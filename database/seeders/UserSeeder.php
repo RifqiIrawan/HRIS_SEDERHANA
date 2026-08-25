@@ -28,7 +28,7 @@ class UserSeeder extends Seeder
         $adminEmployeeId = Employee::where('employee_code', EmployeeSeeder::ADMIN_CODE)->value('id');
 
         User::updateOrCreate(
-            ['email' => 'admin@hris.test'],
+            ['email' => 'admin@parkops.test'],
             [
                 'name' => 'Administrator',
                 'password' => self::DEFAULT_PASSWORD,
@@ -39,7 +39,7 @@ class UserSeeder extends Seeder
         );
 
         User::updateOrCreate(
-            ['email' => 'hr@hris.test'],
+            ['email' => 'hr@parkops.test'],
             [
                 'name' => 'Staff HR',
                 'password' => self::DEFAULT_PASSWORD,
@@ -58,7 +58,7 @@ class UserSeeder extends Seeder
             ->get()
             ->each(function (Employee $employee) use ($roles) {
                 User::updateOrCreate(
-                    ['email' => strtolower($employee->employee_code).'@hris.test'],
+                    ['email' => strtolower($employee->employee_code).'@parkops.test'],
                     [
                         'name' => $employee->full_name,
                         'password' => self::DEFAULT_PASSWORD,

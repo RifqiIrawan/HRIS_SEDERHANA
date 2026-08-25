@@ -9,7 +9,7 @@ jQuery(function ($) {
 
     /** Reference options are selected by code — that is what an employee row stores. */
     function fillRef($select, items, placeholder) {
-        return HRIS.fillSelect($select, items, placeholder, { valueKey: 'code' });
+        return ParkOps.fillSelect($select, items, placeholder, { valueKey: 'code' });
     }
 
     /** code → name, for rendering a list cell without a second request. */
@@ -40,7 +40,7 @@ jQuery(function ($) {
         $select.val(code);
     }
 
-    HRIS.lookups()
+    ParkOps.lookups()
         .done(function (data) {
             refs = {
                 employment_statuses: data.employment_statuses || [],
@@ -56,10 +56,10 @@ jQuery(function ($) {
             // The table may already have drawn with raw codes in those columns.
             if (crud) crud.table.rows().invalidate().draw(false);
         })
-        .fail(HRIS.handleError);
+        .fail(ParkOps.handleError);
 
-    var crud = HRIS.crud({
-        baseUrl: window.HRIS_URLS.base,
+    var crud = ParkOps.crud({
+        baseUrl: window.PARKOPS_URLS.base,
         filters: ['#searchInput', '#statusFilter'],
         labels: { create: 'Tambah Karyawan', edit: 'Ubah Karyawan' },
         defaults: { daily_rate: 0 },
@@ -83,47 +83,47 @@ jQuery(function ($) {
             {
                 data: 'employee_code',
                 className: 'fw-semibold',
-                render: HRIS.esc
+                render: ParkOps.esc
             },
-            { data: 'full_name', render: HRIS.esc },
+            { data: 'full_name', render: ParkOps.esc },
             {
                 data: 'nik',
                 className: 'small text-body-secondary',
-                render: function (value) { return HRIS.esc(value || '−'); }
+                render: function (value) { return ParkOps.esc(value || '−'); }
             },
             {
                 data: 'phone',
                 className: 'small',
-                render: function (value) { return HRIS.esc(value || '−'); }
+                render: function (value) { return ParkOps.esc(value || '−'); }
             },
             {
                 data: 'employment_type',
                 render: function (value) {
                     return '<span class="badge text-bg-light border">' +
-                        HRIS.esc(labelFor(refs.employment_types, value)) + '</span>';
+                        ParkOps.esc(labelFor(refs.employment_types, value)) + '</span>';
                 }
             },
             {
                 data: 'join_date',
                 className: 'small',
-                render: function (value) { return value ? HRIS.formatDate(value) : '−'; }
+                render: function (value) { return value ? ParkOps.formatDate(value) : '−'; }
             },
             {
                 data: 'daily_rate',
                 className: 'text-end text-tabular',
-                render: HRIS.formatRupiah
+                render: ParkOps.formatRupiah
             },
             {
                 data: 'status',
                 className: 'text-center',
-                render: HRIS.statusBadge
+                render: ParkOps.statusBadge
             },
             {
                 data: null,
                 orderable: false,
                 className: 'text-end text-nowrap',
                 render: function (row) {
-                    return HRIS.rowActions(row.id, 'karyawan ' + row.employee_code);
+                    return ParkOps.rowActions(row.id, 'karyawan ' + row.employee_code);
                 }
             }
         ]

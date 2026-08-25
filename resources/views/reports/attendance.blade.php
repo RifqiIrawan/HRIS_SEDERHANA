@@ -77,7 +77,7 @@
 
 @push('scripts')
 <script>
-    window.HRIS_URLS = {
+    window.PARKOPS_URLS = {
         base: @json(route('reports.attendance')),
         export: @json(route('reports.attendance.export')),
         lookups: @json(route('lookups'))
@@ -85,6 +85,6 @@
 </script>
 <script src="{{ asset('js/reports.js') }}"></script>
 <script>
-    jQuery(function () { HRIS.attendanceReport(); });
+    jQuery(function () { ParkOps.attendanceReport(); });
 </script>
 @endpush

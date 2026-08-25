@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Attendance;
 use App\Models\Employee;
+use App\Models\Menu;
 use App\Models\Role;
 use App\Models\User;
 use Illuminate\Contracts\Http\Kernel;
@@ -27,7 +28,7 @@ class AuthorizationTest extends TestCase
     {
         parent::setUp();
 
-        RateLimiter::clear('user@hris.test|127.0.0.1');
+        RateLimiter::clear('user@parkops.test|127.0.0.1');
     }
 
     /* ── Login ───────────────────────────────────────────────────────── */
@@ -35,10 +36,10 @@ class AuthorizationTest extends TestCase
     #[Test]
     public function a_valid_login_starts_a_session_and_stamps_the_last_login(): void
     {
-        $user = User::factory()->admin()->create(['email' => 'admin@hris.test']);
+        $user = User::factory()->admin()->create(['email' => 'admin@parkops.test']);
 
         $this->postJson(route('login.attempt'), [
-            'email' => 'admin@hris.test',
+            'email' => 'admin@parkops.test',
             'password' => 'password',
         ])
             ->assertOk()
@@ -52,10 +53,10 @@ class AuthorizationTest extends TestCase
     #[Test]
     public function a_wrong_password_is_refused_without_revealing_which_half_was_wrong(): void
     {
-        User::factory()->admin()->create(['email' => 'admin@hris.test']);
+        User::factory()->admin()->create(['email' => 'admin@parkops.test']);
 
         $response = $this->postJson(route('login.attempt'), [
-            'email' => 'admin@hris.test',
+            'email' => 'admin@parkops.test',
             'password' => 'salah-sekali',
         ])->assertStatus(422);
 
@@ -67,7 +68,7 @@ class AuthorizationTest extends TestCase
     public function an_unknown_email_gets_the_same_message_as_a_wrong_password(): void
     {
         $response = $this->postJson(route('login.attempt'), [
-            'email' => 'tidak-ada@hris.test',
+            'email' => 'tidak-ada@parkops.test',
             'password' => 'password',
         ])->assertStatus(422);
 
@@ -77,10 +78,10 @@ class AuthorizationTest extends TestCase
     #[Test]
     public function an_inactive_account_cannot_log_in(): void
     {
-        User::factory()->admin()->inactive()->create(['email' => 'nonaktif@hris.test']);
+        User::factory()->admin()->inactive()->create(['email' => 'nonaktif@parkops.test']);
 
         $this->postJson(route('login.attempt'), [
-            'email' => 'nonaktif@hris.test',
+            'email' => 'nonaktif@parkops.test',
             'password' => 'password',
         ])->assertStatus(422);
 
@@ -91,17 +92,17 @@ class AuthorizationTest extends TestCase
     #[Test]
     public function repeated_failures_are_throttled(): void
     {
-        User::factory()->admin()->create(['email' => 'admin@hris.test']);
+        User::factory()->admin()->create(['email' => 'admin@parkops.test']);
 
         for ($attempt = 1; $attempt <= 5; $attempt++) {
             $this->postJson(route('login.attempt'), [
-                'email' => 'admin@hris.test',
+                'email' => 'admin@parkops.test',
                 'password' => 'salah',
             ])->assertStatus(422);
         }
 
         $this->postJson(route('login.attempt'), [
-            'email' => 'admin@hris.test',
+            'email' => 'admin@parkops.test',
             'password' => 'password',
         ])->assertStatus(429);
     }
@@ -280,5 +281,76 @@ class AuthorizationTest extends TestCase
             ->get(route('dashboard'))
             ->assertOk()
             ->assertSee('name="csrf-token"', false);
+    }
+
+    /* ── Per-action grants ───────────────────────────────────────────── */
+
+    /**
+     * The point of storing verbs rather than one bit: holding a menu is
+     * permission to open it, not permission to do everything on it.
+     *
+     * Asserted at the route, because that is the only place it counts. A screen
+     * that merely hides its delete button is still one crafted request away
+     * from deleting the row.
+     */
+    #[Test]
+    public function a_grant_without_delete_opens_the_screen_and_refuses_the_deletion(): void
+    {
+        $hr = Role::where('role_code', Role::HR)->firstOrFail();
+        $menu = Menu::where('menu_code', 'employees')->firstOrFail();
+
+        $hr->menus()->syncWithoutDetaching([
+            $menu->id => ['actions' => ['read', 'create']],
+        ]);
+
+        $user = User::factory()->hr()->create();
+        $employee = Employee::factory()->create();
+
+        $this->actingAs($user)->getJson(route('employees.index'))->assertOk();
+
+        $this->actingAs($user)
+            ->deleteJson(route('employees.destroy', $employee))
+            ->assertForbidden();
+
+        $this->assertDatabaseHas('employees', ['id' => $employee->id]);
+    }
+
+    /** The same row with delete switched on, so the refusal above is the grant
+     *  talking and not some unrelated rule further down the stack. */
+    #[Test]
+    public function the_same_grant_with_delete_switched_on_goes_through(): void
+    {
+        $hr = Role::where('role_code', Role::HR)->firstOrFail();
+        $menu = Menu::where('menu_code', 'employees')->firstOrFail();
+
+        $hr->menus()->syncWithoutDetaching([
+            $menu->id => ['actions' => ['read', 'create', 'update', 'delete']],
+        ]);
+
+        $employee = Employee::factory()->create();
+
+        $this->actingAs(User::factory()->hr()->create())
+            ->deleteJson(route('employees.destroy', $employee))
+            ->assertOk();
+    }
+
+    /**
+     * Rows written before the column existed carry NULL, which has always meant
+     * the whole menu. Reading that as "no verbs" would lock every role out of
+     * everything the moment the migration ran.
+     */
+    #[Test]
+    public function a_null_action_list_still_grants_the_whole_menu(): void
+    {
+        $hr = Role::where('role_code', Role::HR)->firstOrFail();
+        $menu = Menu::where('menu_code', 'employees')->firstOrFail();
+
+        $hr->menus()->syncWithoutDetaching([$menu->id => ['actions' => null]]);
+
+        $employee = Employee::factory()->create();
+
+        $this->actingAs(User::factory()->hr()->create())
+            ->deleteJson(route('employees.destroy', $employee))
+            ->assertOk();
     }
 }

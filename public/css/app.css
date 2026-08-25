@@ -1,4 +1,4 @@
-/* HRIS Juru Parkir — application shell on top of Bootstrap 5.
+/* ParkOps — application shell on top of Bootstrap 5.
    Design language: soft neutral. Light warm-grey ground, white surfaces
    separated by hairlines rather than shadows, generous radii, one restrained
    accent. Bootstrap still supplies the components; this file supplies the
@@ -6,6 +6,9 @@
 
 :root {
     --sidebar-width: 258px;
+    /* Wide enough for a centred 1.15rem glyph plus its hit area; anything less
+       and the icons stop being comfortable targets. */
+    --sidebar-rail: 4.25rem;
 
     /* Ground and surfaces */
     --surface: #ffffff;
@@ -21,6 +24,10 @@
     --ink: #1c1a17;
     --ink-soft: #57534e;
     --ink-muted: #8b857e;
+
+    /* The sticky navbar's rendered height. Anything else that sticks to the top
+       of the page parks below it rather than sliding underneath. */
+    --navbar-height: 65px;
 
     /* Single accent, plus its wash for active/selected states */
     --accent: #4f46e5;
@@ -179,12 +186,57 @@ h1, h2, h3, h4, h5, h6 {
         min-height: 0;
     }
 
-    /* Collapsed to zero width rather than display:none so the close and reopen
-       animate, and so the offcanvas markup underneath is left untouched. */
+    /* Collapsed to a rail, not to nothing. Zero width did animate shut nicely,
+       but it also took the navigation with it — the only way back to another
+       screen was to reopen the sidebar first. Keeping the icons leaves every
+       destination one click away while still handing the width to the content.
+       A width rather than display:none, so the close and reopen still animate
+       and the offcanvas markup underneath is left untouched. */
     .sidebar-collapsed .app-sidebar {
-        width: 0;
-        flex-basis: 0;
-        border-right-color: transparent;
+        width: var(--sidebar-rail);
+        flex-basis: var(--sidebar-rail);
+    }
+
+    /* Everything that is words goes; everything that is a glyph stays. */
+    .sidebar-collapsed .sidebar-nav .nav-link span,
+    .sidebar-collapsed .sidebar-heading,
+    .sidebar-collapsed .brand-text,
+    .sidebar-collapsed .sidebar-footer {
+        display: none;
+    }
+
+    /* A group folded shut by the stored state would take its icons down with
+       it, and in the rail there is no heading left to unfold it by — so the
+       fold is suspended here rather than left to strand its own items. */
+    .sidebar-collapsed .sidebar-nav .collapse {
+        display: block;
+    }
+
+    .sidebar-collapsed .sidebar-nav {
+        padding-left: .45rem;
+        padding-right: .45rem;
+    }
+
+    .sidebar-collapsed .sidebar-nav .nav-link {
+        justify-content: center;
+        gap: 0;
+        padding-left: 0;
+        padding-right: 0;
+    }
+
+    .sidebar-collapsed .sidebar-nav .nav-link i {
+        width: auto;
+        font-size: 1.15rem;
+    }
+
+    .sidebar-collapsed .sidebar-brand {
+        justify-content: center;
+        padding-left: 0;
+        padding-right: 0;
+    }
+
+    .sidebar-collapsed .brand {
+        gap: 0;
     }
 }
 
@@ -212,27 +264,108 @@ h1, h2, h3, h4, h5, h6 {
 .sidebar-brand {
     flex: 0 0 auto;
     align-items: center;
-    gap: .7rem;
-    padding: 1.35rem 1.35rem 1.15rem;
-    color: var(--ink);
+    padding: 1.25rem 1.35rem 1.1rem;
 }
 
-.sidebar-brand i {
-    font-size: 1.5rem;
-    color: var(--accent);
+/* ── Brand lockup ─────────────────────────────────────────────────────── */
+
+/* Rendered by <x-brand>. The mark is parkops-icon.svg as supplied; the
+   wordmark is HTML text rather than parkops-logo.svg, because an SVG used as
+   an <img> is an isolated document that cannot load the Poppins the artwork
+   asks for — it would fall back to a system face and stop being the wordmark.
+   Everything below reproduces the artwork's own values: Poppins 500, "Park" in
+   #111827 with "Ops" in #1f4fd8, and the tagline in #6b7280 with the same
+   2/15em tracking the SVG sets. */
+.brand {
+    --brand-mark: 2.1rem;
+    --brand-name: 1.05rem;
+    /* The artwork sets the tagline at 15/56 of the wordmark, which lands under
+       6px once the lockup is chrome-sized. Stated per size instead, at the
+       smallest that still reads. */
+    --brand-tagline: .64rem;
+    --brand-gap: .6rem;
+
+    display: inline-flex;
+    align-items: center;
+    gap: var(--brand-gap);
+    min-width: 0;
+    text-decoration: none;
 }
 
-.sidebar-brand strong {
+.brand-lg {
+    --brand-mark: 3.4rem;
+    --brand-name: 1.75rem;
+    --brand-tagline: .72rem;
+    --brand-gap: .8rem;
+}
+
+/* A fixed box, or a slow SVG reflows the row it sits in as it arrives. */
+.brand-mark {
+    flex: 0 0 auto;
+    width: var(--brand-mark);
+    height: var(--brand-mark);
     display: block;
-    line-height: 1.15;
-    letter-spacing: -.01em;
-    font-size: 1.02rem;
 }
 
-.sidebar-brand small {
-    display: block;
-    font-size: .72rem;
+.brand-text {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.brand-name {
+    font-family: "Poppins", "Inter", system-ui, sans-serif;
+    font-weight: 500;
+    font-size: var(--brand-name);
+    line-height: 1.1;
+    letter-spacing: -.005em;
+    color: #111827;
+    white-space: nowrap;
+}
+
+.brand-name > span {
+    color: #1f4fd8;
+}
+
+.brand-tagline {
+    font-family: "Poppins", "Inter", system-ui, sans-serif;
+    font-size: var(--brand-tagline);
+    line-height: 1.35;
+    letter-spacing: .133em;
+    color: #6b7280;
+    margin-top: .18em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* The supplied dark artwork puts the same #1f4fd8 on a near-black plate, which
+   works at logo size but drops to about 2.2:1 against our dark surface — below
+   readable for a 17px wordmark. Same hue, lifted until it can be read. */
+[data-bs-theme="dark"] .brand-name {
+    color: #ffffff;
+}
+
+[data-bs-theme="dark"] .brand-name > span {
+    color: #6b86ff;
+}
+
+[data-bs-theme="dark"] .brand-tagline {
     color: var(--ink-muted);
+}
+
+/* The markup asks for a column with `flex-column`, but that utility only sets
+   the direction — Bootstrap never makes .offcanvas-body a flex container, so
+   the body stayed a block and .sidebar-nav never received a height to scroll
+   within. It still became a scroll container of its own (overflow-y: auto
+   below), and `overscroll-behavior: contain` then refused to pass the gesture
+   up to the body that could actually scroll. The result on a phone: a menu
+   taller than the drawer that would not move at all.
+   Declared for every width, because the desktop rail has the same shape — it
+   only escaped notice there by usually being short enough to fit. */
+.app-sidebar > .offcanvas-body {
+    display: flex;
+    min-height: 0;
 }
 
 .sidebar-nav {
@@ -997,6 +1130,51 @@ th.dt-ordering-desc .dt-column-order {
     opacity: 1;
 }
 
+/* ── Header alignment ── */
+
+/* Every header label sits centred over its column, whatever the cells beneath
+   it do: figures stay right-aligned, names stay left, but the head row reads as
+   one band of labels instead of a zigzag. !important because the .text-end and
+   .text-center utilities on those same cells carry it too. */
+.table thead th {
+    text-align: center !important;
+}
+
+/* DataTables pins the sort arrow to the column's right edge and reserves a 30px
+   gutter for it. That reads fine under a left-aligned label and badly under a
+   centred one — the label floats mid-column while its arrow sits far off at the
+   rule, so the two stop looking like one control. Put the arrow back in the
+   flow right after the label, and give the cell its symmetric padding back. */
+.dt-container table.dataTable thead th.dt-orderable-asc,
+.dt-container table.dataTable thead th.dt-orderable-desc {
+    padding-right: var(--cell-pad-x);
+}
+
+/* The compact grid pads its cells with a literal, so the gutter it reclaims is
+   a literal too — matching .table-sm's own .55rem inset above. */
+.dt-container table.dataTable.table-sm thead th.dt-orderable-asc,
+.dt-container table.dataTable.table-sm thead th.dt-orderable-desc {
+    padding-right: .55rem;
+}
+
+/* position:relative rather than static: the ▲ and ▼ are absolutely positioned
+   against this span, so it has to stay their containing block. It also loses
+   the top/bottom stretch that gave it height, hence the explicit one. */
+.dt-container table.dataTable thead th.dt-orderable-asc span.dt-column-order,
+.dt-container table.dataTable thead th.dt-orderable-desc span.dt-column-order,
+.dt-container table.dataTable.table-sm thead th.dt-orderable-asc span.dt-column-order,
+.dt-container table.dataTable.table-sm thead th.dt-orderable-desc span.dt-column-order {
+    position: relative;
+    right: auto;
+    top: auto;
+    bottom: auto;
+    display: inline-block;
+    width: .7rem;
+    height: 1em;
+    margin-left: .2rem;
+    vertical-align: middle;
+}
+
 /* ── Pagination ── */
 
 /* One bordered group with shared edges, the way a pager is expected to look,
@@ -1189,52 +1367,219 @@ th.dt-ordering-desc .dt-column-order {
 /* ── Role → menu access ───────────────────────────────────────────────── */
 
 /* One role at a time rather than a column per role: the list below stays the
-   same width whether the system has three roles or fifty, which the matrix
-   this replaced could not. */
-.menu-access-toolbar {
+   same width whether the system has three roles or fifty, which the matrix it
+   replaced could not. */
+
+/* ── The access dialog ── */
+
+.access-modal-heading {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .25rem .5rem;
+    min-width: 0;
+}
+
+.access-modal-heading .modal-title {
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+/* The role the switches belong to. The picker is hidden in here, so this is
+   the only thing naming it. */
+.access-role-name {
+    color: var(--accent-ink);
+}
+
+.access-modal-heading p {
+    flex: 1 0 100%;
+    margin: 0;
+    font-size: .78rem;
+    color: var(--ink-muted);
+}
+
+/* Copy, search and the bulk controls sit between the header and the scrolling
+   body, so they stay put while the list moves under them. */
+.menu-access .access-controls,
+.menu-access .access-toolbar {
+    flex: 0 0 auto;
+}
+
+/* Two stacked sticky bands inside one scroller: the column header owns the top
+   edge, and a group heading parks directly beneath it rather than underneath
+   it. The offset is the header's own height — retune both together. */
+.menu-access .access-list {
+    --access-head-h: 2rem;
+}
+
+.menu-access .access-head {
+    position: sticky;
+    top: 0;
+    z-index: 3;
+    min-height: var(--access-head-h);
+}
+
+.menu-access .access-group-head {
+    top: var(--access-head-h);
+}
+
+/* The tally belongs with the button that acts on it. */
+.menu-access .modal-footer .access-summary {
+    margin-right: auto;
+}
+
+.menu-access.is-saving .access-list {
+    opacity: .55;
+    pointer-events: none;
+    transition: opacity .15s ease .1s;
+}
+
+/* ── Role picker ── */
+
+/* Its own band above the toolbar, because everything below it is meaningless
+   until the role has been read. Three labelled fields rather than one inline
+   row: "Role" and "Copy dari role" are the same control twice over and read as
+   a pair of dropdowns unless each says which is which. */
+.access-controls {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: .75rem 1rem;
+    padding: .85rem var(--table-inset);
+    border-bottom: 1px solid var(--line);
+    background: var(--surface);
+}
+
+.access-field {
+    display: flex;
+    flex-direction: column;
+    gap: .3rem;
+    min-width: 0;
+}
+
+/* The search takes the slack, so the two dropdowns keep the width they need to
+   show a full role name and nothing wider. */
+.access-field-grow {
+    flex: 1 1 15rem;
+}
+
+.access-field .form-label {
+    margin: 0;
+    font-size: .78rem;
+    font-weight: 500;
+    color: var(--ink-soft);
+}
+
+.access-field .form-select {
+    width: auto;
+    min-width: 16rem;
+    max-width: 100%;
+    height: 2.3rem;
+    font-size: .9rem;
+    font-weight: 500;
+}
+
+.access-role-badges {
+    display: inline-flex;
+    gap: .3rem;
+}
+
+/* Sits at the left of the toolbar; the buttons on that row claim the auto
+   margin, so claiming one here too would push the two into each other. */
+.access-summary {
+    font-size: .82rem;
+    color: var(--ink-soft);
+    white-space: nowrap;
+}
+
+.access-summary strong {
+    font-weight: 600;
+    color: var(--ink);
+}
+
+/* Says out loud that what is on screen is not yet what is stored. */
+.access-unsaved {
+    display: inline-block;
+    margin-left: .35rem;
+    padding: .1rem .45rem;
+    border-radius: 999px;
+    background: var(--warn-wash);
+    color: var(--warn-ink);
+    font-size: .72rem;
+    font-weight: 600;
+}
+
+/* ── Toolbar ── */
+
+.access-toolbar {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
     gap: .6rem;
-    padding: .7rem var(--table-inset);
+    padding: .6rem var(--table-inset);
     border-bottom: 1px solid var(--line);
+    background: var(--chrome-bg);
 }
 
-.menu-access-toolbar .form-label {
-    font-size: .82rem;
-    color: var(--ink-soft);
-}
-
-.menu-access-toolbar .form-select {
-    width: auto;
-    min-width: 18rem;
-    max-width: 100%;
-    height: 2.25rem;
+.access-controls .form-control {
+    width: 100%;
+    height: 2.3rem;
     font-size: .875rem;
+
+    /* Same drawn magnifier as the table toolbars, so the two search boxes on
+       this page are recognisably the same control. */
+    padding-left: 2.15rem;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%238b857e' stroke-width='1.6' stroke-linecap='round'%3E%3Ccircle cx='6.9' cy='6.9' r='4.5'/%3E%3Cpath d='M10.3 10.3 13.8 13.8'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: left .72rem center;
+    background-size: 15px 15px;
 }
 
-.menu-access-count {
-    font-size: .8rem;
-    color: var(--ink-muted);
+.access-toolbar-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .5rem;
     margin-left: auto;
 }
 
-/* Says out loud that what is on screen is not yet what is stored. */
-.menu-access-count.is-dirty {
-    color: var(--warn-ink);
-    font-weight: 500;
-}
-
-.menu-access-list {
-    padding: .35rem 0 .5rem;
-}
-
-.menu-access-group {
-    display: flex;
+.access-check-all {
+    display: inline-flex;
     align-items: center;
-    justify-content: space-between;
+    gap: .4rem;
+    font-size: .82rem;
+    color: var(--ink-soft);
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.access-check-all .form-check-input {
+    margin: 0;
+}
+
+/* ── The list ── */
+
+/* Capped rather than endless: on a 1366×768 laptop an unbounded list pushes
+   the role picker and the save button off the top of the screen, which are the
+   two controls this panel is for. */
+/* The list flows with the page rather than scrolling inside the card.
+   Capping it at 30rem hid more than half of it — 465px of a 963px list — behind
+   a second scrollbar, on a page with room to spare below the card, and clipped
+   whichever row happened to land on the fold so the card read as broken. */
+.access-list {
+    overflow: visible;
+}
+
+/* Names the two columns. The right-hand one holds controls now, and an
+   unannounced bank of switches makes the reader deduce what they switch. */
+.access-head {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 25rem;
+    align-items: center;
     gap: .5rem;
-    padding: .7rem var(--table-inset) .35rem;
+    padding: .45rem var(--table-inset);
+    border-bottom: 1px solid var(--line);
+    background: var(--surface);
     font-size: .7rem;
     font-weight: 600;
     letter-spacing: .06em;
@@ -1242,59 +1587,337 @@ th.dt-ordering-desc .dt-column-order {
     color: var(--ink-muted);
 }
 
-.menu-access-group .btn-link {
-    --bs-btn-color: var(--accent);
-    --bs-btn-hover-color: var(--accent-ink);
-    padding: 0;
-    font-size: .75rem;
-    font-weight: 500;
-    text-transform: none;
-    letter-spacing: 0;
-    text-decoration: none;
+
+.access-group + .access-group {
+    border-top: 1px solid var(--line);
 }
 
-/* The whole row is the label, so the hit area is the row rather than a 16px
-   box — this is a screen where every line gets clicked. */
-.menu-access-item {
+/* Sticky against the page now that the list no longer scrolls on its own, so
+   the heading you are ticking under stays on screen — parked below the navbar
+   rather than sliding under it. */
+.access-group-head {
+    position: sticky;
+    top: var(--navbar-height);
+    z-index: 2;
     display: flex;
     align-items: center;
-    gap: .7rem;
-    padding: .45rem var(--table-inset);
+    gap: .5rem;
+    padding: .5rem var(--table-inset);
+    background: var(--chrome-bg);
+    border-bottom: 1px solid var(--line);
+}
+
+.access-group-label {
+    display: inline-flex;
+    align-items: center;
+    gap: .5rem;
+    font-size: .78rem;
+    font-weight: 600;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    color: var(--ink);
     cursor: pointer;
+}
+
+.access-group-label .form-check-input {
+    margin: 0;
+}
+
+.access-group-count {
+    margin-left: auto;
+    font-size: .75rem;
+    font-variant-numeric: tabular-nums;
+    color: var(--ink-muted);
+}
+
+/* The caret is the fold control for a group and the disclosure for a row; one
+   shape, one rotation, both places. */
+.access-caret {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.5rem;
+    height: 1.5rem;
+    padding: 0;
+    border: 0;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--ink-muted);
+    font-size: .8rem;
+    transition: background-color .12s ease, color .12s ease;
+}
+
+.access-caret:hover {
+    background: var(--surface);
+    color: var(--ink);
+}
+
+.access-caret > i {
+    transition: transform .15s ease;
+}
+
+.access-caret[aria-expanded="false"] > i {
+    transform: rotate(-90deg);
+}
+
+.access-group.is-collapsed .access-group-body {
+    display: none;
+}
+
+/* ── A menu row ── */
+
+/* Two columns, and they must be the same two .access-head declares — the
+   header sits above every row and any difference reads as the whole table
+   being crooked. A third `auto` track survived here from the design that had a
+   disclosure caret; with only two children left it collected nothing but its
+   own gap, which pulled the name column 8px narrower than the header's and
+   knocked all nineteen rows out of line with it. */
+.access-item {
+    display: grid;
+    /* A fixed lane for the switches, not an auto one. Sized to the widest bank
+       (four verbs), so every row starts its switches at the same x instead of
+       hugging the right edge and staggering by however many verbs it happens
+       to have. The bank still packs left, so a row missing a verb closes the
+       gap rather than leaving a hole — read and create line up everywhere,
+       and only the rows with a gap shift the verbs after it. */
+    grid-template-columns: minmax(0, 1fr) 25rem;
+    align-items: center;
+    gap: .5rem;
+    padding: .4rem var(--table-inset);
+    border-bottom: 1px solid var(--line);
     transition: background-color .12s ease;
 }
 
-.menu-access-item:hover {
+.access-item:last-child {
+    border-bottom: 0;
+}
+
+.access-item:hover {
     background: var(--row-hover);
 }
 
-.menu-access-item .form-check-input {
+.access-item-main {
+    display: flex;
+    align-items: center;
+    gap: .65rem;
+    min-width: 0;
+    cursor: pointer;
+}
+
+.access-item-main .form-check-input {
     flex: 0 0 auto;
     margin: 0;
 }
 
-.menu-access-item .form-check-input:disabled {
+.access-item.is-locked .access-item-main {
+    cursor: default;
+}
+
+.access-item.is-locked .form-check-input {
     opacity: .55;
 }
 
-.menu-access-label {
+.access-item-text {
     display: flex;
-    flex: 1 1 auto;
     flex-wrap: wrap;
     align-items: baseline;
-    justify-content: space-between;
-    gap: .25rem .75rem;
+    gap: .2rem .6rem;
     min-width: 0;
 }
 
-.menu-access-name {
-    font-size: .9rem;
+.access-item-name {
+    font-size: .885rem;
     color: var(--ink);
 }
 
-.menu-access-code {
-    font-size: .75rem;
+.access-item-name .bi-lock-fill {
+    font-size: .72rem;
     color: var(--ink-muted);
+    margin-left: .25rem;
+}
+
+.access-item-code {
+    font-size: .74rem;
+    color: var(--ink-muted);
+}
+
+/* ── What the row grants, one switch per verb ── */
+
+/* Controls now, not a report. Each switch is a stored grant the middleware
+   reads, so the bank is left-aligned in its column and evenly spaced: an
+   administrator scans down a verb to compare rows, which ragged right edges
+   made impossible. */
+.access-item-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-start;
+    gap: .15rem .35rem;
+}
+
+.access-switch {
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+    min-width: 5.9rem;
+    padding: .1rem 0;
+    margin: 0;
+    font-size: .74rem;
+    color: var(--ink-soft);
+    cursor: pointer;
+}
+
+/* Bootstrap's .form-switch expects a .form-check wrapper and pulls the input
+   left by its own padding. There is no wrapper here, so the geometry is set
+   outright rather than fought with. */
+.access-switch .form-check-input {
+    flex: 0 0 auto;
+    width: 1.85rem;
+    height: 1rem;
+    margin: 0;
+    background-position: left center;
+}
+
+.access-switch .form-check-input:checked {
+    background-position: right center;
+}
+
+/* A switch whose menu is untricked still shows its position — the row is off,
+   not blank — but reads as inert, which is what it is until the menu is back. */
+.access-item.is-off .access-switch {
+    color: var(--ink-muted);
+    cursor: not-allowed;
+}
+
+.access-item.is-off .access-switch .form-check-input {
+    opacity: .4;
+}
+
+/* The one grant that cannot be undone by re-ticking a box, so it is the one
+   the row says out loud once it is on. */
+.access-switch .form-check-input[data-action="delete"]:checked {
+    background-color: var(--danger-ink);
+    border-color: var(--danger-ink);
+}
+
+.access-switch .form-check-input[data-action="delete"]:checked ~ span {
+    color: var(--danger-ink);
+    font-weight: 600;
+}
+
+.access-noroute {
+    font-size: .72rem;
+    font-style: italic;
+    color: var(--ink-muted);
+}
+
+/* ── Empty state ── */
+
+.access-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: .6rem;
+    padding: 2.5rem 1.25rem;
+    text-align: center;
+}
+
+/* ── Row action menu ──────────────────────────────────────────────────── */
+
+.row-menu .dropdown-menu {
+    --bs-dropdown-min-width: 12rem;
+    --bs-dropdown-font-size: .85rem;
+    --bs-dropdown-padding-y: .3rem;
+    --bs-dropdown-item-padding-y: .4rem;
+    --bs-dropdown-item-padding-x: .75rem;
+    --bs-dropdown-link-color: var(--ink-soft);
+    --bs-dropdown-link-hover-color: var(--ink);
+    --bs-dropdown-link-hover-bg: var(--surface-sunken);
+    --bs-dropdown-link-active-color: var(--ink);
+    --bs-dropdown-link-active-bg: var(--surface-sunken);
+    --bs-dropdown-link-disabled-color: var(--ink-muted);
+}
+
+.row-menu .dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: .55rem;
+    border-radius: var(--radius-sm);
+    white-space: nowrap;
+}
+
+.row-menu .dropdown-item > i {
+    font-size: .9rem;
+    color: var(--ink-muted);
+    width: 1rem;
+    text-align: center;
+}
+
+.row-menu .dropdown-item-danger {
+    --bs-dropdown-link-color: var(--danger-ink);
+    --bs-dropdown-link-hover-color: var(--danger-ink);
+    --bs-dropdown-link-hover-bg: var(--danger-wash);
+}
+
+.row-menu .dropdown-item-danger > i {
+    color: var(--danger-ink);
+}
+
+/* A disabled entry stays in place rather than vanishing on some rows: an
+   action that is missing on one row and present on the next reads as a bug. */
+.row-menu .dropdown-item:disabled > i {
+    color: var(--ink-muted);
+}
+
+/* ── Soft badge ───────────────────────────────────────────────────────── */
+
+/* For labels that classify rather than alert — "System Role", "aksi". Quieter
+   than any of the .text-bg-* pairs, which all carry a semantic this does not. */
+.badge.badge-soft {
+    background: var(--neutral-wash);
+    color: var(--neutral-ink);
+    box-shadow: inset 0 0 0 1px var(--neutral-line);
+    font-weight: 500;
+}
+
+/* ── Narrow screens ───────────────────────────────────────────────────── */
+
+@media (max-width: 767.98px) {
+    .access-field,
+    .access-field .form-select,
+    .access-controls .form-control {
+        width: 100%;
+        min-width: 0;
+    }
+
+    .access-summary,
+    .access-toolbar-actions {
+        margin-left: 0;
+    }
+
+    /* The switches drop below the name rather than out of the row. They are the
+       point of the screen now — hiding them the way the old chips were hidden
+       would leave a phone able to see the mapping and not edit it. */
+    .access-item {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .access-item-actions {
+        grid-column: 1 / -1;
+        padding-left: 1.9rem;
+    }
+
+    /* The switch lane moves onto its own line down here, so the header has
+       nothing to label on the right. Dropping the track as well as the label
+       matters: a 25rem column reserved on a 390px screen leaves 21px for the
+       word it still has to print on the left. */
+    .access-head {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .access-head > :nth-child(2) {
+        display: none;
+    }
 }
 
 /* ── Attendance / map ─────────────────────────────────────────────────── */

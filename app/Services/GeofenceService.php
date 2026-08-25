@@ -31,7 +31,7 @@ class GeofenceService
      */
     public function calculateDistance(float $lat1, float $lng1, float $lat2, float $lng2): float
     {
-        $earthRadius = (float) config('hris.earth_radius_meters');
+        $earthRadius = (float) config('parkops.earth_radius_meters');
 
         $latDelta = deg2rad($lat2 - $lat1);
         $lngDelta = deg2rad($lng2 - $lng1);
@@ -49,7 +49,7 @@ class GeofenceService
      */
     public static function isEnforced(): bool
     {
-        return (bool) config('hris.enforce_geofence', true);
+        return (bool) config('parkops.enforce_geofence', true);
     }
 
     /**

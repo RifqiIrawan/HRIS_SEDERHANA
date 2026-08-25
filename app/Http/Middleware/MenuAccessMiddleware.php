@@ -25,7 +25,10 @@ class MenuAccessMiddleware
             abort(401, 'Sesi Anda telah berakhir. Silakan login kembali.');
         }
 
-        if ($this->access->allowsRoute($user, $request->route()?->getName())) {
+        // The verb travels with the name: the mapping grants read, create,
+        // update and delete separately, so a role that may open a screen is not
+        // thereby allowed to post to it.
+        if ($this->access->allowsRoute($user, $request->route()?->getName(), $request->method())) {
             return $next($request);
         }
 

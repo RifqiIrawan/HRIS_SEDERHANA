@@ -111,7 +111,7 @@
 
 @push('scripts')
 <script>
-    window.HRIS_URLS = { base: @json(route('employees.index')) };
+    window.PARKOPS_URLS = { base: @json(route('employees.index')) };
 </script>
 <script src="{{ asset('js/crud.js') }}"></script>
 <script src="{{ asset('js/employees.js') }}"></script>

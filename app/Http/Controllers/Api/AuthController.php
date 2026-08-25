@@ -14,7 +14,7 @@ use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 /**
- * Token authentication for the Flutter client (HRIS-PARKIR-MOBILE).
+ * Token authentication for the Flutter client (ParkOps-PARKIR-MOBILE).
  *
  * The web AuthController is left alone: it opens a session and answers with a
  * redirect, neither of which a mobile client can use. What is restated here

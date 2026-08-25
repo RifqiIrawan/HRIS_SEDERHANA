@@ -19,11 +19,11 @@ jQuery(function ($) {
         event.preventDefault();
 
         $alert.addClass('d-none').text('');
-        HRIS.clearErrors($form);
-        HRIS.busy($button, true, 'Memeriksa…');
+        ParkOps.clearErrors($form);
+        ParkOps.busy($button, true, 'Memeriksa…');
 
-        HRIS.api({
-            url: window.HRIS_ROUTES.login,
+        ParkOps.api({
+            url: window.PARKOPS_ROUTES.login,
             type: 'POST',
             data: {
                 email: $('#email').val(),
@@ -37,9 +37,9 @@ jQuery(function ($) {
                 window.location.href = data.redirect;
             })
             .fail(function (error) {
-                HRIS.busy($button, false);
+                ParkOps.busy($button, false);
                 $alert.removeClass('d-none').text(error.message);
-                HRIS.showErrors($form, error.errors);
+                ParkOps.showErrors($form, error.errors);
                 $('#password').val('').trigger('focus');
             });
     });

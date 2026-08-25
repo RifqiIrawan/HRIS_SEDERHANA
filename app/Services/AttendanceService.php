@@ -222,7 +222,7 @@ class AttendanceService
             return 0;
         }
 
-        $tolerance = $shift->late_tolerance_minutes ?? config('hris.default_late_tolerance_minutes');
+        $tolerance = $shift->late_tolerance_minutes ?? config('parkops.default_late_tolerance_minutes');
         $threshold = $roster->start_datetime->copy()->addMinutes($tolerance);
 
         if ($checkInAt->lessThanOrEqualTo($threshold)) {
@@ -279,8 +279,8 @@ class AttendanceService
      */
     private function rosterCandidates(Employee $employee, Carbon $now)
     {
-        $earlyWindow = (int) config('hris.checkin_early_window_minutes');
-        $lateWindow = (int) config('hris.checkin_late_window_minutes');
+        $earlyWindow = (int) config('parkops.checkin_early_window_minutes');
+        $lateWindow = (int) config('parkops.checkin_late_window_minutes');
 
         // Both comparisons are rearranged to put the column on one side —
         // "now >= start - early" becomes "start <= now + early", and
@@ -317,7 +317,7 @@ class AttendanceService
      */
     private function checkOutOpensAt(Attendance $attendance): Carbon
     {
-        $early = (int) config('hris.checkout_early_window_minutes');
+        $early = (int) config('parkops.checkout_early_window_minutes');
         $end = $attendance->roster?->end_datetime;
 
         if (! $end) {
@@ -336,7 +336,7 @@ class AttendanceService
      */
     private function checkOutDeadline(Attendance $attendance): Carbon
     {
-        $grace = (int) config('hris.checkout_grace_minutes');
+        $grace = (int) config('parkops.checkout_grace_minutes');
 
         $end = $attendance->roster?->end_datetime
             ?? $attendance->check_in_at->copy()->addDay();

@@ -40,7 +40,7 @@ jQuery(function ($) {
     function shortDate(value) {
         var parts = String(value || '').split('-');
 
-        if (parts.length !== 3) return HRIS.esc(value);
+        if (parts.length !== 3) return ParkOps.esc(value);
 
         return parts[2] + ' ' + MONTHS[parseInt(parts[1], 10) - 1];
     }
@@ -66,7 +66,7 @@ jQuery(function ($) {
     /* ── Rendering ──────────────────────────────────────────────────── */
 
     function emptyBox(message) {
-        return '<div class="text-body-secondary small p-3">' + HRIS.esc(message) + '</div>';
+        return '<div class="text-body-secondary small p-3">' + ParkOps.esc(message) + '</div>';
     }
 
     function renderAssignments(rows) {
@@ -77,17 +77,17 @@ jQuery(function ($) {
                 (row.end_date ? shortDate(row.end_date) : 'seterusnya');
 
             return '<tr>' +
-                '<td><span class="badge text-bg-primary">' + HRIS.esc(row.shift_code) + '</span></td>' +
+                '<td><span class="badge text-bg-primary">' + ParkOps.esc(row.shift_code) + '</span></td>' +
                 '<td class="small">' + period +
                 '<div class="text-body-secondary" style="font-size:.72rem">' +
-                HRIS.esc(row.location_name) + '</div></td>' +
-                '<td class="text-center">' + HRIS.statusBadge(row.status) + '</td>' +
+                ParkOps.esc(row.location_name) + '</div></td>' +
+                '<td class="text-center">' + ParkOps.statusBadge(row.status) + '</td>' +
                 '<td class="text-end text-nowrap">' +
-                HRIS.actionGroup(
+                ParkOps.actionGroup(
                     '<button type="button" class="btn btn-sm btn-icon js-cycle-edit" data-id="' + row.id +
                     '" title="Ubah siklus ini" aria-label="Ubah siklus ini"><i class="bi bi-pencil"></i></button>' +
                     '<button type="button" class="btn btn-sm btn-icon btn-icon-danger js-cycle-delete" data-id="' + row.id +
-                    '" data-label="' + HRIS.esc(row.shift_code + ' ' + period) +
+                    '" data-label="' + ParkOps.esc(row.shift_code + ' ' + period) +
                     '" title="Hapus siklus ini" aria-label="Hapus siklus ini"><i class="bi bi-trash"></i></button>'
                 ) +
                 '</td></tr>';
@@ -112,23 +112,23 @@ jQuery(function ($) {
             var shift = isOff
                 ? '<span class="badge text-bg-secondary">OFF</span>'
                 : row.shift_code
-                    ? '<span class="badge text-bg-primary">' + HRIS.esc(row.shift_code) + '</span>'
-                    : '<span class="badge text-bg-dark">' + HRIS.esc(row.status) + '</span>';
+                    ? '<span class="badge text-bg-primary">' + ParkOps.esc(row.shift_code) + '</span>'
+                    : '<span class="badge text-bg-dark">' + ParkOps.esc(row.status) + '</span>';
 
             var hours = isOff || !row.start
                 ? '<span class="text-body-secondary">—</span>'
-                : HRIS.esc(row.start) + ' → ' + HRIS.esc(row.end);
+                : ParkOps.esc(row.start) + ' → ' + ParkOps.esc(row.end);
 
             var attendance = row.attendance_status
-                ? '<span class="badge text-bg-success">' + HRIS.esc(row.attendance_status) + '</span>'
+                ? '<span class="badge text-bg-success">' + ParkOps.esc(row.attendance_status) + '</span>'
                 : '<span class="text-body-secondary">—</span>';
 
             return '<tr' + (isOff ? ' class="table-light"' : '') + '>' +
                 '<td class="small text-nowrap">' + shortDate(row.date) +
-                '<div class="text-body-secondary" style="font-size:.72rem">' + HRIS.esc(row.weekday) + '</div></td>' +
+                '<div class="text-body-secondary" style="font-size:.72rem">' + ParkOps.esc(row.weekday) + '</div></td>' +
                 '<td class="text-center">' + shift + '</td>' +
                 '<td class="small text-nowrap">' + hours + '</td>' +
-                '<td class="small">' + HRIS.esc(row.location_name) + '</td>' +
+                '<td class="small">' + ParkOps.esc(row.location_name) + '</td>' +
                 '<td class="text-center small">' + attendance + '</td>' +
                 '</tr>';
         }).join('');
@@ -155,8 +155,8 @@ jQuery(function ($) {
         $('#shiftDetailAssignments').html(emptyBox('Memuat…'));
         $('#shiftDetailRosters').html(emptyBox('Memuat…'));
 
-        HRIS.api({
-            url: window.HRIS_URLS.employeeShifts + '/' + employeeId + '/shifts',
+        ParkOps.api({
+            url: window.PARKOPS_URLS.employeeShifts + '/' + employeeId + '/shifts',
             data: {
                 start_date: $('#detail_start_date').val(),
                 end_date: $('#detail_end_date').val()
@@ -212,7 +212,7 @@ jQuery(function ($) {
 
     /** Keeps the list behind the dialog in step with what was just changed. */
     function reloadList() {
-        if (window.HRIS_ASSIGNMENT_CRUD) window.HRIS_ASSIGNMENT_CRUD.reload();
+        if (window.PARKOPS_ASSIGNMENT_CRUD) window.PARKOPS_ASSIGNMENT_CRUD.reload();
     }
 
     // The list row covers a whole rotation, so a single cycle can only be
@@ -223,7 +223,7 @@ jQuery(function ($) {
         // Two modals open at once would leave the backdrop behind when the
         // inner one closes, so the detail steps aside first.
         $modal.one('hidden.bs.modal', function () {
-            if (window.HRIS_ASSIGNMENT_CRUD) window.HRIS_ASSIGNMENT_CRUD.openEdit(id);
+            if (window.PARKOPS_ASSIGNMENT_CRUD) window.PARKOPS_ASSIGNMENT_CRUD.openEdit(id);
         });
 
         modal.hide();
@@ -232,22 +232,22 @@ jQuery(function ($) {
     $('#shiftDetailAssignments').on('click', '.js-cycle-delete', function () {
         var $button = $(this);
 
-        HRIS.confirm({
+        ParkOps.confirm({
             title: 'Hapus siklus',
             message: 'Hapus assignment ' + $button.data('label') + '?',
             confirmLabel: 'Ya, hapus'
         }).done(function () {
-            HRIS.api({
-                url: window.HRIS_URLS.base + '/' + $button.data('id'),
+            ParkOps.api({
+                url: window.PARKOPS_URLS.base + '/' + $button.data('id'),
                 type: 'POST',
                 data: { _method: 'DELETE' }
             })
                 .done(function () {
-                    HRIS.toast('Assignment berhasil dihapus.');
+                    ParkOps.toast('Assignment berhasil dihapus.');
                     load();
                     reloadList();
                 })
-                .fail(HRIS.handleError);
+                .fail(ParkOps.handleError);
         });
     });
 

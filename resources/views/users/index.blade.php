@@ -85,7 +85,7 @@
 
 @push('scripts')
 <script>
-    window.HRIS_URLS = {
+    window.PARKOPS_URLS = {
         base: @json(route('users.index')),
         lookups: @json(route('lookups'))
     };

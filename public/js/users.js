@@ -5,14 +5,14 @@ jQuery(function ($) {
     var employees = [];
 
     function loadLookups(force) {
-        return HRIS.lookups(force)
+        return ParkOps.lookups(force)
             .done(function (data) {
                 employees = data.employees || [];
 
-                HRIS.fillSelect($('#roleFilter'), data.roles, 'Semua Role');
-                HRIS.fillSelect($('#role_id'), data.roles, 'Pilih role…');
+                ParkOps.fillSelect($('#roleFilter'), data.roles, 'Semua Role');
+                ParkOps.fillSelect($('#role_id'), data.roles, 'Pilih role…');
             })
-            .fail(HRIS.handleError);
+            .fail(ParkOps.handleError);
     }
 
     loadLookups();
@@ -33,7 +33,7 @@ jQuery(function ($) {
             return !e.has_user || String(e.id) === String(currentId);
         });
 
-        HRIS.fillSelect($select, free, 'Tidak terhubung');
+        ParkOps.fillSelect($select, free, 'Tidak terhubung');
 
         if (currentId && !$select.find('option[value="' + currentId + '"]').length) {
             $select.append($('<option></option>').val(currentId).text(currentLabel || '#' + currentId));
@@ -58,8 +58,8 @@ jQuery(function ($) {
         $('#password').prop('required', !isEdit);
     }
 
-    HRIS.crud({
-        baseUrl: window.HRIS_URLS.base,
+    ParkOps.crud({
+        baseUrl: window.PARKOPS_URLS.base,
         filters: ['#searchInput', '#roleFilter', '#statusFilter'],
         labels: { create: 'Tambah User', edit: 'Ubah User' },
         defaults: { status: 'ACTIVE' },
@@ -84,33 +84,33 @@ jQuery(function ($) {
         },
 
         columns: [
-            { data: 'name', className: 'fw-semibold', render: HRIS.esc },
-            { data: 'email', className: 'small', render: HRIS.esc },
+            { data: 'name', className: 'fw-semibold', render: ParkOps.esc },
+            { data: 'email', className: 'small', render: ParkOps.esc },
             {
                 data: 'role_code',
                 orderable: false,
                 render: function (value) {
-                    return '<span class="badge text-bg-primary">' + HRIS.esc(value || '−') + '</span>';
+                    return '<span class="badge text-bg-primary">' + ParkOps.esc(value || '−') + '</span>';
                 }
             },
             {
                 data: 'employee_label',
                 orderable: false,
                 className: 'small',
-                render: function (value) { return HRIS.esc(value || '−'); }
+                render: function (value) { return ParkOps.esc(value || '−'); }
             },
             {
                 data: 'last_login_at',
                 className: 'small text-body-secondary',
-                render: function (value) { return HRIS.esc(value || 'Belum pernah'); }
+                render: function (value) { return ParkOps.esc(value || 'Belum pernah'); }
             },
-            { data: 'status', className: 'text-center', render: HRIS.statusBadge },
+            { data: 'status', className: 'text-center', render: ParkOps.statusBadge },
             {
                 data: null,
                 orderable: false,
                 className: 'text-end text-nowrap',
                 render: function (row) {
-                    return HRIS.rowActions(row.id, 'user ' + row.email);
+                    return ParkOps.rowActions(row.id, 'user ' + row.email);
                 }
             }
         ]

@@ -11,7 +11,7 @@ use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 /**
- * The token API the Flutter client (HRIS-PARKIR-MOBILE) talks to.
+ * The token API the Flutter client (ParkOps-PARKIR-MOBILE) talks to.
  *
  * The cases here are the ones the web suite cannot cover, because they are about
  * the differences between the two stacks: there is no session to fall back on, no
@@ -118,7 +118,7 @@ class MobileApiTest extends TestCase
 
         // The same message for an address that does not exist at all.
         $this->postJson('/api/login', [
-            'email' => 'tidak-ada@hris.test',
+            'email' => 'tidak-ada@parkops.test',
             'password' => 'password',
         ])
             ->assertStatus(422)

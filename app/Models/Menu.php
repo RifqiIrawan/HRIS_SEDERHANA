@@ -40,7 +40,9 @@ class Menu extends Model
 
     public function roles(): BelongsToMany
     {
-        return $this->belongsToMany(Role::class);
+        return $this->belongsToMany(Role::class)
+            ->using(MenuRole::class)
+            ->withPivot('actions');
     }
 
     public function scopeActive($query)

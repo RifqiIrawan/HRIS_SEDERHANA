@@ -37,6 +37,8 @@ class MenuAccessService
     /** Menus are read on nearly every request; load them once per request. */
     private ?Collection $menus = null;
 
+    public function __construct(private readonly MenuActionService $actions) {}
+
     /** @return Collection<int, Menu> */
     public function all(): Collection
     {
@@ -75,13 +77,17 @@ class MenuAccessService
     }
 
     /**
-     * Whether a route name is reachable by this user.
+     * Whether a route is reachable by this user.
      *
      * Denies by default: only the UNGOVERNED list and routes a menu actually
      * claims get through. An unnamed route cannot be mapped, so it is refused
      * rather than waved past.
+     *
+     * The method matters as much as the name. Holding a menu is permission to
+     * reach it, not permission to do everything on it — GET /employees and
+     * DELETE /employees/{employee} are the same menu and separate grants.
      */
-    public function allowsRoute(User $user, ?string $routeName): bool
+    public function allowsRoute(User $user, ?string $routeName, ?string $method = 'GET'): bool
     {
         if ($routeName !== null && in_array($routeName, self::UNGOVERNED, true)) {
             return true;
@@ -93,7 +99,7 @@ class MenuAccessService
 
         $menu = $this->menuForRoute($routeName);
 
-        return $menu !== null && $this->grants($menu, $user);
+        return $menu !== null && $this->grants($menu, $user, $this->actions->forMethod($method));
     }
 
     /**
@@ -118,18 +124,37 @@ class MenuAccessService
     }
 
     /**
-     * The mapping decision: may this role reach this menu at all?
+     * The mapping decision: may this role reach this menu, for this action?
      *
      * One rule sits above the table — a locked menu stays open to ADMIN, so the
-     * screen that edits the mapping can never be mapped away.
+     * screen that edits the mapping can never be mapped away. That exemption
+     * covers every verb on purpose: an ADMIN who could open the Role screen but
+     * not PUT to it would be locked out just as thoroughly, only less visibly.
      */
-    private function grants(Menu $menu, User $user): bool
+    private function grants(Menu $menu, User $user, ?string $action = null): bool
     {
         if ($menu->is_locked && $user->isAdmin()) {
             return true;
         }
 
-        return $menu->roles->contains('id', $user->role_id);
+        $role = $menu->roles->firstWhere('id', $user->role_id);
+
+        if ($role === null) {
+            return false;
+        }
+
+        // Sidebar visibility asks nothing about verbs, and a verb we do not map
+        // has no toggle to check it against — either way the grant is enough.
+        if ($action === null) {
+            return true;
+        }
+
+        $granted = $role->pivot->actions;
+
+        // NULL is the grant that predates per-action storage: the whole menu,
+        // as that row has always meant. An explicit list is exactly what it
+        // says it is, the empty one included.
+        return $granted === null || in_array($action, $granted, true);
     }
 
     /**

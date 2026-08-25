@@ -6,20 +6,24 @@ use App\Http\Requests\RoleRequest;
 use App\Models\AuditLog;
 use App\Models\Menu;
 use App\Models\Role;
+use App\Services\MenuActionService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 /** Spec §10. */
 class RoleController extends Controller
 {
+    public function __construct(private readonly MenuActionService $actions) {}
+
     public function index(Request $request): View|JsonResponse
     {
         if (! $this->wantsData($request)) {
             return view('roles.index', [
                 'accessRoles' => $this->accessRoles(),
-                'accessMenus' => $this->accessMenus(),
+                'accessGroups' => $this->accessGroups(),
             ]);
         }
 
@@ -100,7 +104,7 @@ class RoleController extends Controller
     }
 
     /**
-     * Replaces one role's menu list.
+     * Replaces one role's grants.
      *
      * Scoped to a single role rather than the whole matrix, and that is the
      * point: the screen edits one role at a time, so it stays the same width
@@ -109,43 +113,74 @@ class RoleController extends Controller
      * complete grid made unavoidable.
      *
      * Within that role the payload is still complete: an absent menu is a
-     * revocation, so sending only the ticked boxes is exactly right.
+     * revocation, so sending only what is switched on is exactly right.
      */
     public function updateMenuAccess(Request $request): JsonResponse
     {
         $validated = $request->validate([
             'role_id' => ['required', 'integer', 'exists:roles,id'],
             'menus' => ['present', 'array'],
-            'menus.*' => ['integer', 'exists:menus,id'],
+            'menus.*.id' => ['required', 'integer', 'exists:menus,id'],
+            'menus.*.actions' => ['present', 'array'],
+            'menus.*.actions.*' => ['string', Rule::in(MenuActionService::ORDER)],
         ]);
 
         $role = Role::findOrFail($validated['role_id']);
+        $menus = Menu::whereIn('id', array_column($validated['menus'], 'id'))->get()->keyBy('id');
 
-        $menuIds = array_values(array_unique(array_map('intval', $validated['menus'])));
+        $sync = [];
 
-        // A locked menu keeps ADMIN whatever the form said. User and Role are
-        // the only screens that can hand access back, so letting them be
-        // unmapped would be an unrecoverable lockout.
+        foreach ($validated['menus'] as $row) {
+            $menu = $menus->get((int) $row['id']);
+
+            if ($menu === null) {
+                continue;
+            }
+
+            // Clamped to what the menu can actually offer. A stored "delete" on
+            // a menu no route answers DELETE for would read as a live grant on
+            // the next screen draw, and would quietly become one the day such a
+            // route is added.
+            $granted = array_values(array_intersect(
+                $this->actions->availableFor($menu),
+                array_unique($row['actions']),
+            ));
+
+            // A grant is its actions. Keeping a row with none would put the
+            // menu in the sidebar and then answer 403 at the door.
+            if ($granted === []) {
+                continue;
+            }
+
+            $sync[$menu->id] = ['actions' => $granted];
+        }
+
+        // Locked menus keep ADMIN whatever the form said, at full reach. User
+        // and Role are the only screens that can hand access back, so letting
+        // them be unmapped — or left read-only, which cannot save — would be an
+        // unrecoverable lockout.
         if ($role->role_code === Role::ADMIN) {
-            $menuIds = array_values(array_unique(array_merge(
-                $menuIds,
-                Menu::where('is_locked', true)->pluck('id')->all(),
-            )));
+            foreach (Menu::where('is_locked', true)->get() as $locked) {
+                $sync[$locked->id] = ['actions' => $this->actions->availableFor($locked)];
+            }
         }
 
         // sync() is a detach followed by an attach; a failure between the two
         // would leave the role holding nothing at all.
-        DB::transaction(fn () => $role->menus()->sync($menuIds));
+        DB::transaction(fn () => $role->menus()->sync($sync));
 
         AuditLog::record(
             'menu_access.updated',
             $role,
             'Akses menu role '.$role->role_code.' diperbarui',
-            ['menus' => count($menuIds)],
+            ['menus' => count($sync), 'actions' => array_sum(array_map(
+                fn (array $p) => count($p['actions']),
+                $sync,
+            ))],
         );
 
         return $this->ok(
-            ['role_id' => $role->id, 'menus' => $menuIds],
+            ['role_id' => $role->id, 'menus' => $sync],
             'Akses menu '.$role->role_code.' berhasil disimpan.',
         );
     }
@@ -180,8 +215,73 @@ class RoleController extends Controller
             'group_name' => $menu->group_name,
             'is_action' => $menu->is_action,
             'is_locked' => $menu->is_locked,
-            'role_ids' => $menu->roles->pluck('id')->all(),
+            'available' => $this->actions->availableFor($menu),
+            'grants' => $this->grantsFor($menu),
         ]);
+    }
+
+    /**
+     * The menu registry as the access editor renders it: grouped by heading in
+     * sidebar order, each menu carrying the actions it can offer and, per role,
+     * the ones actually held.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private function accessGroups(): array
+    {
+        $menus = Menu::with('roles:id')->orderBy('sort_order')->get();
+        $groups = [];
+
+        foreach ($menus as $menu) {
+            // A menu with no heading is not an error: Dashboard and the
+            // check-in screen sit at the top of the sidebar ungrouped.
+            $heading = $menu->group_name ?: 'Umum';
+
+            $groups[$heading] ??= [
+                'name' => $heading,
+                'slug' => 'grp-'.substr(md5($heading), 0, 8),
+                'menus' => [],
+            ];
+
+            $groups[$heading]['menus'][] = [
+                'id' => $menu->id,
+                'menu_code' => $menu->menu_code,
+                'menu_name' => $menu->menu_name,
+                'is_action' => $menu->is_action,
+                'is_locked' => $menu->is_locked,
+                'available' => $this->actions->availableFor($menu),
+                'grants' => $this->grantsFor($menu),
+            ];
+        }
+
+        return array_values($groups);
+    }
+
+    /**
+     * Which actions each role holds on this menu, keyed by role id.
+     *
+     * A NULL pivot is expanded to the full set here rather than left for the
+     * client to interpret: the screen would otherwise have to reimplement the
+     * "NULL means everything" rule that MenuAccessService already owns, and a
+     * disagreement between the two would draw toggles that do not match what
+     * the middleware enforces.
+     *
+     * @return array<int, array<int, string>>
+     */
+    private function grantsFor(Menu $menu): array
+    {
+        $available = $this->actions->availableFor($menu);
+        $grants = [];
+
+        foreach ($menu->roles as $role) {
+            $held = $role->pivot->actions;
+
+            $grants[$role->id] = $held === null
+                ? $available
+                : array_values(array_intersect($available, $held));
+        }
+
+        return $grants;
     }
 
     /**

@@ -28,17 +28,17 @@ jQuery(function ($) {
 
     /* ── Lookups ────────────────────────────────────────────────────── */
 
-    HRIS.lookups()
+    ParkOps.lookups()
         .done(function (data) {
             employees = data.employees || [];
             shifts = data.shifts || [];
 
-            HRIS.fillSelect($('#rot_location_id'), data.locations, 'Pilih lokasi…');
+            ParkOps.fillSelect($('#rot_location_id'), data.locations, 'Pilih lokasi…');
 
             renderShiftPicker();
             renderEmployeeChecklist();
         })
-        .fail(HRIS.handleError);
+        .fail(ParkOps.handleError);
 
     /* ── Shift picker ───────────────────────────────────────────────── */
 
@@ -55,8 +55,8 @@ jQuery(function ($) {
                 '<input class="form-check-input js-rot-shift" type="checkbox" value="' + shift.id +
                 '" id="rot_shift_' + shift.id + '" checked>' +
                 '<label class="form-check-label small" for="rot_shift_' + shift.id + '">' +
-                '<span class="badge text-bg-light border me-1">' + HRIS.esc(shift.code) + '</span>' +
-                HRIS.esc(shift.label) + '</label>' +
+                '<span class="badge text-bg-light border me-1">' + ParkOps.esc(shift.code) + '</span>' +
+                ParkOps.esc(shift.label) + '</label>' +
                 '</div>';
         }).join(''));
 
@@ -78,7 +78,7 @@ jQuery(function ($) {
             return chosen.indexOf(String(shift.id)) !== -1;
         });
 
-        HRIS.fillSelect($('#rot_start_shift_id'), options, 'Bagi rata otomatis');
+        ParkOps.fillSelect($('#rot_start_shift_id'), options, 'Bagi rata otomatis');
     }
 
     $('#rotShiftList').on('change', '.js-rot-shift', syncStartShiftOptions);
@@ -114,7 +114,7 @@ jQuery(function ($) {
             return '<div class="form-check">' +
                 '<input class="form-check-input js-rot-employee" type="checkbox" value="' + e.id +
                 '" id="rot_emp_' + e.id + '"' + checked + '>' +
-                '<label class="form-check-label small" for="rot_emp_' + e.id + '">' + HRIS.esc(e.label) + '</label>' +
+                '<label class="form-check-label small" for="rot_emp_' + e.id + '">' + ParkOps.esc(e.label) + '</label>' +
                 '</div>';
         }).join(''));
 
@@ -131,7 +131,7 @@ jQuery(function ($) {
 
     // Filtering re-renders the list, which would drop ticks that scrolled out
     // of view, so the current selection is carried across renders.
-    $('#rotEmployeeSearch').on('input', HRIS.debounce(renderEmployeeChecklist, 250));
+    $('#rotEmployeeSearch').on('input', ParkOps.debounce(renderEmployeeChecklist, 250));
     $('#rotEmployeeList').on('change', '.js-rot-employee', updateCount);
 
     $('#rotSelectAll').on('click', function () {
@@ -182,7 +182,7 @@ jQuery(function ($) {
         var months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
         var parts = String(value || '').split('-');
 
-        if (parts.length !== 3) return HRIS.esc(value);
+        if (parts.length !== 3) return ParkOps.esc(value);
 
         return parts[2] + ' ' + months[parseInt(parts[1], 10) - 1];
     }
@@ -197,7 +197,7 @@ jQuery(function ($) {
             : '';
 
         return '<div class="d-flex align-items-center gap-2 mb-1">' +
-            '<span class="badge text-bg-primary" style="min-width:2.6rem">' + HRIS.esc(block.shift_code) + '</span>' +
+            '<span class="badge text-bg-primary" style="min-width:2.6rem">' + ParkOps.esc(block.shift_code) + '</span>' +
             '<span class="small">' + range + off + '</span>' +
             '</div>';
     }
@@ -207,7 +207,7 @@ jQuery(function ($) {
 
         var parts = row.conflicts.map(function (c) {
             var verb = c.action === 'TRIM' ? 'dipotong' : 'dihapus';
-            return HRIS.esc(c.shift_code) + ' ' + shortDate(c.start_date) +
+            return ParkOps.esc(c.shift_code) + ' ' + shortDate(c.start_date) +
                 ' → ' + (c.end_date ? shortDate(c.end_date) : 'seterusnya') + ' (' + verb + ')';
         });
 
@@ -223,19 +223,19 @@ jQuery(function ($) {
     function renderPlan(plan) {
         var rows = (plan.employees || []).map(function (row) {
             var current = row.anchor_shift_code
-                ? '<span class="badge text-bg-light border">' + HRIS.esc(row.anchor_shift_code) + '</span>' +
+                ? '<span class="badge text-bg-light border">' + ParkOps.esc(row.anchor_shift_code) + '</span>' +
                   '<div class="text-body-secondary" style="font-size:.7rem">sejak ' + shortDate(row.anchor_start_date) + '</div>'
                 : '<span class="text-body-secondary small">belum ada</span>';
 
             var schedule = row.skipped
-                ? '<span class="text-danger small">' + HRIS.esc(row.reason || 'Dilewati.') + '</span>'
+                ? '<span class="text-danger small">' + ParkOps.esc(row.reason || 'Dilewati.') + '</span>'
                 : (row.blocks || []).map(blockChip).join('') + conflictNote(row);
 
             return '<tr' + (row.skipped ? ' class="table-warning"' : '') + '>' +
-                '<td><div class="fw-semibold small">' + HRIS.esc(row.employee_name) + '</div>' +
-                '<div class="text-body-secondary" style="font-size:.72rem">' + HRIS.esc(row.employee_code) + '</div></td>' +
+                '<td><div class="fw-semibold small">' + ParkOps.esc(row.employee_name) + '</div>' +
+                '<div class="text-body-secondary" style="font-size:.72rem">' + ParkOps.esc(row.employee_code) + '</div></td>' +
                 '<td class="text-center">' + current + '</td>' +
-                '<td class="text-center small">' + HRIS.esc(row.off_label || '-') +
+                '<td class="text-center small">' + ParkOps.esc(row.off_label || '-') +
                 '<div class="text-body-secondary" style="font-size:.7rem">' +
                 (row.work_days || 0) + ' hari kerja</div></td>' +
                 '<td>' + schedule + '</td>' +
@@ -245,7 +245,7 @@ jQuery(function ($) {
         var order = (plan.rotation || []).join(' → ');
 
         return '<div class="small text-body-secondary px-3 py-2 border-bottom">' +
-            'Urutan rotasi: <strong>' + HRIS.esc(order) + '</strong>' +
+            'Urutan rotasi: <strong>' + ParkOps.esc(order) + '</strong>' +
             (plan.direction === 'UP' ? ' (naik)' : ' (turun)') +
             ' · ganti tiap ' + plan.cycle_days + ' hari</div>' +
             '<table class="table table-sm table-hover align-middle mb-0">' +
@@ -276,12 +276,12 @@ jQuery(function ($) {
 
         $('#rotationPreview').html('<div class="text-body-secondary small p-3">Menyusun pratinjau…</div>');
 
-        HRIS.api({ url: window.HRIS_URLS.rotationPreview, type: 'POST', data: data })
+        ParkOps.api({ url: window.PARKOPS_URLS.rotationPreview, type: 'POST', data: data })
             .done(function (plan) {
                 $('#rotationPreview').html(renderPlan(plan));
             })
             .fail(function (error) {
-                $('#rotationPreview').html('<div class="text-danger small p-3">' + HRIS.esc(error.message) + '</div>');
+                $('#rotationPreview').html('<div class="text-danger small p-3">' + ParkOps.esc(error.message) + '</div>');
             });
     }
 
@@ -289,9 +289,9 @@ jQuery(function ($) {
     $('#rotationForm').on('change',
         '#rot_location_id, #rot_start_date, #rot_end_date, #rot_cycle_days, #rot_direction, ' +
         '#rot_off_days, #rot_off_mode, #rot_start_shift_id, .js-off-weekday',
-        HRIS.debounce(refreshPreview, 400));
-    $('#rotEmployeeList').on('change', '.js-rot-employee', HRIS.debounce(refreshPreview, 600));
-    $('#rotShiftList').on('change', '.js-rot-shift', HRIS.debounce(refreshPreview, 400));
+        ParkOps.debounce(refreshPreview, 400));
+    $('#rotEmployeeList').on('change', '.js-rot-employee', ParkOps.debounce(refreshPreview, 600));
+    $('#rotShiftList').on('change', '.js-rot-shift', ParkOps.debounce(refreshPreview, 400));
 
     /* ── Defaults ───────────────────────────────────────────────────── */
 
@@ -334,7 +334,7 @@ jQuery(function ($) {
         var data = payload();
 
         if (!data.employee_ids.length) {
-            HRIS.toast('Pilih minimal satu karyawan.', 'warning');
+            ParkOps.toast('Pilih minimal satu karyawan.', 'warning');
             return;
         }
 
@@ -342,15 +342,15 @@ jQuery(function ($) {
         // server would read as "no selection = every shift" — the opposite of
         // what unticking them all means. So it is caught here.
         if (data.shift_ids.length < 2) {
-            HRIS.toast('Pilih minimal 2 shift untuk dirotasi.', 'warning');
+            ParkOps.toast('Pilih minimal 2 shift untuk dirotasi.', 'warning');
             return;
         }
 
         var $button = $('.js-rotate');
-        HRIS.busy($button, true, 'Membuat jadwal…');
-        HRIS.clearErrors($('#rotationForm'));
+        ParkOps.busy($button, true, 'Membuat jadwal…');
+        ParkOps.clearErrors($('#rotationForm'));
 
-        HRIS.api({ url: window.HRIS_URLS.rotation, type: 'POST', data: data })
+        ParkOps.api({ url: window.PARKOPS_URLS.rotation, type: 'POST', data: data })
             .done(function (result) {
                 modal.hide();
 
@@ -365,14 +365,14 @@ jQuery(function ($) {
                 $('#rotationResultBody').html(renderPlan(result));
                 resultModal.show();
 
-                HRIS.toast(
+                ParkOps.toast(
                     result.assignments_created + ' assignment dibuat untuk ' +
                     result.employees_done + ' karyawan.',
                     'success'
                 );
 
                 (result.messages || []).slice(0, 3).forEach(function (message) {
-                    HRIS.toast(message, 'warning');
+                    ParkOps.toast(message, 'warning');
                 });
 
                 // The list is sorted newest-first, so the fresh rows land on
@@ -382,9 +382,9 @@ jQuery(function ($) {
                 }
             })
             .fail(function (error) {
-                HRIS.showErrors($('#rotationForm'), error.errors);
-                HRIS.toast(error.message, 'danger');
+                ParkOps.showErrors($('#rotationForm'), error.errors);
+                ParkOps.toast(error.message, 'danger');
             })
-            .always(function () { HRIS.busy($button, false); });
+            .always(function () { ParkOps.busy($button, false); });
     });
 });

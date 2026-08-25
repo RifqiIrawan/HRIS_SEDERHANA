@@ -9,17 +9,13 @@
 
 <aside class="app-sidebar offcanvas-lg offcanvas-start" tabindex="-1" id="appSidebar">
     <div class="offcanvas-header border-bottom d-lg-none">
-        <span class="fw-semibold">{{ config('app.name') }}</span>
+        <x-brand />
         <button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#appSidebar"></button>
     </div>
 
     <div class="offcanvas-body flex-column p-0">
         <div class="sidebar-brand d-none d-lg-flex">
-            <i class="bi bi-p-square-fill"></i>
-            <span>
-                <strong>HRIS</strong>
-                <small>Juru Parkir</small>
-            </span>
+            <x-brand :tagline="true" />
         </div>
 
         <nav class="sidebar-nav flex-grow-1">
@@ -45,7 +41,10 @@
                         @foreach ($group['items'] as $item)
                             @php($active = request()->routeIs($item->route_name))
                             <li class="nav-item">
-                                <a class="nav-link {{ $active ? 'active' : '' }}" href="{{ route($item->route_name) }}">
+                                {{-- The title is what names the entry once the rail is
+                                     collapsed and the label beside the icon is gone. --}}
+                                <a class="nav-link {{ $active ? 'active' : '' }}" href="{{ route($item->route_name) }}"
+                                   title="{{ $item->menu_name }}">
                                     <i class="bi bi-{{ $item->icon }}"></i>
                                     <span>{{ $item->menu_name }}</span>
                                 </a>
@@ -72,7 +71,7 @@
     (function () {
         var closed;
         try {
-            closed = JSON.parse(localStorage.getItem('hris-sidebar-groups') || '[]');
+            closed = JSON.parse(localStorage.getItem('parkops-sidebar-groups') || '[]');
         } catch (e) { return; /* unreadable storage â€” leaving everything open is fine */ }
         if (!Array.isArray(closed)) { return; }
 

@@ -113,8 +113,8 @@
 @push('scripts')
 <script src="{{ asset('vendor/leaflet/leaflet.js') }}"></script>
 <script>
-    window.HRIS_URLS = { base: @json(route('locations.index')) };
-    window.HRIS_DEFAULTS = {
+    window.PARKOPS_URLS = { base: @json(route('locations.index')) };
+    window.PARKOPS_DEFAULTS = {
         radius: {{ $defaultRadius }},
         accuracy: {{ $defaultAccuracy }},
         // Monas, Jakarta — a sane starting view before any point is chosen.

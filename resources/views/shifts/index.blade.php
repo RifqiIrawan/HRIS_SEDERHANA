@@ -87,7 +87,7 @@
 
 @push('scripts')
 <script>
-    window.HRIS_URLS = { base: @json(route('shifts.index')) };
+    window.PARKOPS_URLS = { base: @json(route('shifts.index')) };
 </script>
 <script src="{{ asset('js/crud.js') }}"></script>
 <script src="{{ asset('js/shifts.js') }}"></script>

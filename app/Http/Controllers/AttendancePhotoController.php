@@ -25,7 +25,7 @@ class AttendancePhotoController extends Controller
             'Anda tidak memiliki akses ke foto absensi ini.',
         );
 
-        $disk = Storage::disk(config('hris.photo.disk'));
+        $disk = Storage::disk(config('parkops.photo.disk'));
 
         abort_unless($disk->exists($photo->file_path), 404, 'Foto absensi tidak ditemukan.');
 

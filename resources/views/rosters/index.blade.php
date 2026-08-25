@@ -174,7 +174,7 @@
 
 @push('scripts')
 <script>
-    window.HRIS_URLS = {
+    window.PARKOPS_URLS = {
         base: @json(route('rosters.index')),
         generate: @json(route('rosters.generate')),
         preview: @json(route('rosters.preview')),

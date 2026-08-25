@@ -3,10 +3,10 @@
  * Absensi (spec §33). Both render the same row; monitoring adds the summary
  * tiles and a "hari ini" shortcut.
  */
-(function ($, HRIS) {
+(function ($, ParkOps) {
     'use strict';
 
-    HRIS.attendanceList = function (options) {
+    ParkOps.attendanceList = function (options) {
         var showEmployee = !!options.showEmployee;
         var isMonitoring = options.mode === 'monitoring';
 
@@ -16,16 +16,16 @@
 
         // Populated from /lookups when the page offers those filters.
         if ($('#locationFilter').length || $('#shiftFilter').length) {
-            HRIS.lookups()
+            ParkOps.lookups()
                 .done(function (data) {
-                    if ($('#locationFilter').length) HRIS.fillSelect($('#locationFilter'), data.locations, 'Semua');
-                    if ($('#shiftFilter').length) HRIS.fillSelect($('#shiftFilter'), data.shifts, 'Semua');
+                    if ($('#locationFilter').length) ParkOps.fillSelect($('#locationFilter'), data.locations, 'Semua');
+                    if ($('#shiftFilter').length) ParkOps.fillSelect($('#shiftFilter'), data.shifts, 'Semua');
                 })
-                .fail(HRIS.handleError);
+                .fail(ParkOps.handleError);
         }
 
         function metre(value) {
-            return value === null || value === undefined ? '−' : HRIS.formatNumber(value, 1) + ' m';
+            return value === null || value === undefined ? '−' : ParkOps.formatNumber(value, 1) + ' m';
         }
 
         function detailCell(item) {
@@ -35,7 +35,7 @@
             // The icon still says at a glance whether the row carries photos,
             // but every row can be opened — the readings behind a row without a
             // photo are exactly the ones worth inspecting.
-            return HRIS.actionGroup(
+            return ParkOps.actionGroup(
                 '<button type="button" class="btn btn-sm btn-icon js-detail"' +
                 ' title="Lihat detail" aria-label="Lihat detail">' +
                 '<i class="bi bi-' + (hasPhoto ? 'image' : 'eye') + '"></i></button>'
@@ -48,7 +48,7 @@
             {
                 data: 'attendance_date',
                 className: 'small text-nowrap',
-                render: HRIS.formatDate
+                render: ParkOps.formatDate
             }
         ];
 
@@ -57,9 +57,9 @@
                 data: 'employee_name',
                 orderable: false,
                 render: function (value, type, row) {
-                    return '<div class="fw-semibold small">' + HRIS.esc(value) + '</div>' +
+                    return '<div class="fw-semibold small">' + ParkOps.esc(value) + '</div>' +
                         '<div class="text-body-secondary" style="font-size:.72rem">' +
-                        HRIS.esc(row.employee_code) + '</div>';
+                        ParkOps.esc(row.employee_code) + '</div>';
                 }
             });
         }
@@ -69,7 +69,7 @@
                 data: 'shift_code',
                 orderable: false,
                 className: 'small',
-                render: function (value) { return HRIS.esc(value || '−'); }
+                render: function (value) { return ParkOps.esc(value || '−'); }
             },
             {
                 data: 'location_name',
@@ -79,25 +79,25 @@
                 // rather than in a column of its own: it is long, often absent,
                 // and only ever read as context for the row it belongs to.
                 render: function (value, type, row) {
-                    var name = HRIS.esc(value || '−');
+                    var name = ParkOps.esc(value || '−');
 
                     if (!row.check_in_address) {
                         return name;
                     }
 
                     return name + '<div class="text-body-secondary" style="font-size:.72rem">' +
-                        '<i class="bi bi-geo-alt me-1"></i>' + HRIS.esc(row.check_in_address) + '</div>';
+                        '<i class="bi bi-geo-alt me-1"></i>' + ParkOps.esc(row.check_in_address) + '</div>';
                 }
             },
             {
                 data: 'check_in_at',
                 className: 'text-center text-tabular',
-                render: function (value) { return value ? HRIS.formatTime(value) : '−'; }
+                render: function (value) { return value ? ParkOps.formatTime(value) : '−'; }
             },
             {
                 data: 'check_out_at',
                 className: 'text-center text-tabular',
-                render: function (value) { return value ? HRIS.formatTime(value) : '−'; }
+                render: function (value) { return value ? ParkOps.formatTime(value) : '−'; }
             },
             { data: 'check_in_distance', className: 'text-end text-tabular small', render: metre },
             { data: 'check_in_accuracy', className: 'text-end text-tabular small', render: metre },
@@ -105,7 +105,7 @@
                 data: 'status',
                 className: 'text-center',
                 render: function (value, type, row) {
-                    return HRIS.statusBadge(value) + (row.late_minutes > 0
+                    return ParkOps.statusBadge(value) + (row.late_minutes > 0
                         ? '<div class="small text-warning-emphasis">+' + row.late_minutes + ' mnt</div>'
                         : '');
                 }
@@ -118,11 +118,11 @@
             }
         );
 
-        var list = HRIS.crud({
-            baseUrl: window.HRIS_URLS.base,
+        var list = ParkOps.crud({
+            baseUrl: window.PARKOPS_URLS.base,
             columns: columns,
             // No create/edit form on these screens; pointing the modal and form
-            // selectors at nothing keeps HRIS.crud in read-only mode.
+            // selectors at nothing keeps ParkOps.crud in read-only mode.
             modalSelector: '#noModal',
             formSelector: '#noForm',
             filters: [
@@ -185,7 +185,7 @@
             // A cross-day shift checks out on the following calendar day, so the
             // date is spelled out whenever it is not the attendance date itself.
             text(side + '.time', stamp
-                ? (stamp.slice(0, 10) === row.attendance_date ? '' : HRIS.formatDate(stamp) + ' ') + HRIS.formatTime(stamp)
+                ? (stamp.slice(0, 10) === row.attendance_date ? '' : ParkOps.formatDate(stamp) + ' ') + ParkOps.formatTime(stamp)
                 : '−');
             text(side + '.distance', metre(row[prefix + 'distance']));
             text(side + '.accuracy', metre(row[prefix + 'accuracy']));
@@ -211,7 +211,7 @@
 
             $cell.html(
                 '<a href="https://www.google.com/maps?q=' + encodeURIComponent(latitude + ',' + longitude) + '" ' +
-                'target="_blank" rel="noopener" title="Buka di Google Maps">' + HRIS.esc(pair) +
+                'target="_blank" rel="noopener" title="Buka di Google Maps">' + ParkOps.esc(pair) +
                 ' <i class="bi bi-box-arrow-up-right"></i></a>'
             );
         }
@@ -227,7 +227,7 @@
 
             var photos = row.photos || {};
 
-            text('date', HRIS.formatDate(row.attendance_date));
+            text('date', ParkOps.formatDate(row.attendance_date));
             text('employee_name', row.employee_name);
             hint('employee_code', row.employee_code);
             $('#photoModal [data-detail-block="employee"]').toggleClass('d-none', !showEmployee);
@@ -237,7 +237,7 @@
             text('location_name', row.location_name);
             hint('radius', '');
 
-            field('status').html(HRIS.statusBadge(row.status));
+            field('status').html(ParkOps.statusBadge(row.status));
             hint('duration', worked(row.check_in_at, row.check_out_at));
 
             fillSide('in', row, photos.CHECK_IN);
@@ -249,7 +249,7 @@
             // endpoint, which the listing deliberately does not carry.
             detailRequestId = row.id;
 
-            HRIS.api({ url: window.HRIS_URLS.detail + '/' + row.id })
+            ParkOps.api({ url: window.PARKOPS_URLS.detail + '/' + row.id })
                 .done(function (detail) {
                     if (detailRequestId !== row.id) return;
 
@@ -257,7 +257,7 @@
                     fillCoordinates('out', detail.check_out_latitude, detail.check_out_longitude);
 
                     hint('radius', detail.location
-                        ? 'Radius ' + HRIS.formatNumber(detail.location.radius_meter) + ' m'
+                        ? 'Radius ' + ParkOps.formatNumber(detail.location.radius_meter) + ' m'
                         : '');
                 })
                 .fail(function () {
@@ -270,4 +270,4 @@
 
         return list;
     };
-})(jQuery, window.HRIS);
+})(jQuery, window.ParkOps);

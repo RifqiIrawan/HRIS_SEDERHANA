@@ -45,7 +45,7 @@ class GeocodingService
      */
     public function reverseGeocode(float $latitude, float $longitude): ?string
     {
-        $config = config('hris.geocoding');
+        $config = config('parkops.geocoding');
 
         if (! $config['enabled']) {
             return null;

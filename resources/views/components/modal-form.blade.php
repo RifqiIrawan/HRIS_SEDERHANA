@@ -1,5 +1,5 @@
 {{--
-    Modal wrapper for the create/edit form driven by HRIS.crud(). The title is
+    Modal wrapper for the create/edit form driven by ParkOps.crud(). The title is
     set at open time, so it is intentionally blank here.
 --}}
 @props([

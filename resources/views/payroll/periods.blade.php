@@ -64,7 +64,7 @@
 
 @push('scripts')
 <script>
-    window.HRIS_URLS = {
+    window.PARKOPS_URLS = {
         base: @json(route('payroll.periods')),
         store: @json(route('payroll.periods.store')),
         payroll: @json(route('payroll.index'))

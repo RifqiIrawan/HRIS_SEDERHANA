@@ -27,8 +27,8 @@ class LocationSeeder extends Seeder
                     'address' => $address,
                     'latitude' => $lat,
                     'longitude' => $lng,
-                    'radius_meter' => config('hris.default_radius_meter'),
-                    'gps_accuracy_limit' => config('hris.default_gps_accuracy_limit'),
+                    'radius_meter' => config('parkops.default_radius_meter'),
+                    'gps_accuracy_limit' => config('parkops.default_gps_accuracy_limit'),
                     'status' => 'ACTIVE',
                 ],
             );

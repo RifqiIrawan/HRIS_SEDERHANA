@@ -1,12 +1,12 @@
 /*
  * The three Karyawan reference masters (Status Kepegawaian, Tipe Kepegawaian,
  * Status Karyawan). Each has its own URL and table; the screen is identical,
- * so one script drives all three from window.HRIS_REF.
+ * so one script drives all three from window.PARKOPS_REF.
  */
 jQuery(function ($) {
     'use strict';
 
-    var ref = window.HRIS_REF || { title: 'Data', entity: 'data' };
+    var ref = window.PARKOPS_REF || { title: 'Data', entity: 'data' };
 
     var $code = $('#code');
     var $status = $('#status');
@@ -32,8 +32,8 @@ jQuery(function ($) {
         this.setSelectionRange(start, start);
     });
 
-    HRIS.crud({
-        baseUrl: window.HRIS_URLS.base,
+    ParkOps.crud({
+        baseUrl: window.PARKOPS_URLS.base,
         filters: ['#searchInput', '#statusFilter'],
         labels: { create: 'Tambah ' + ref.title, edit: 'Ubah ' + ref.title },
         defaults: { status: 'ACTIVE', sort_order: 0 },
@@ -47,30 +47,30 @@ jQuery(function ($) {
                 data: 'code',
                 className: 'fw-semibold text-nowrap',
                 render: function (value, type, row) {
-                    return HRIS.esc(value) + (row.is_system
+                    return ParkOps.esc(value) + (row.is_system
                         ? ' <i class="bi bi-shield-lock text-body-secondary" title="Baris sistem"></i>'
                         : '');
                 }
             },
-            { data: 'name', render: HRIS.esc },
+            { data: 'name', render: ParkOps.esc },
             {
                 data: 'description',
                 orderable: false,
                 className: 'small text-body-secondary',
-                render: function (value) { return HRIS.esc(value || '−'); }
+                render: function (value) { return ParkOps.esc(value || '−'); }
             },
-            { data: 'sort_order', className: 'text-center text-tabular', render: HRIS.esc },
+            { data: 'sort_order', className: 'text-center text-tabular', render: ParkOps.esc },
             {
                 data: 'used_by',
                 orderable: false,
                 className: 'text-center text-tabular',
                 render: function (value) {
                     return value
-                        ? HRIS.esc(value) + ' <span class="text-body-secondary small">karyawan</span>'
+                        ? ParkOps.esc(value) + ' <span class="text-body-secondary small">karyawan</span>'
                         : '<span class="text-body-secondary">−</span>';
                 }
             },
-            { data: 'status', className: 'text-center', render: HRIS.statusBadge },
+            { data: 'status', className: 'text-center', render: ParkOps.statusBadge },
             {
                 data: null,
                 orderable: false,
@@ -78,7 +78,7 @@ jQuery(function ($) {
                 render: function (row) {
                     // A system row has no delete: the server refuses it, so
                     // offering the button would only produce an error toast.
-                    return HRIS.rowActions(row.id, ref.entity + ' ' + row.code, { remove: !row.is_system });
+                    return ParkOps.rowActions(row.id, ref.entity + ' ' + row.code, { remove: !row.is_system });
                 }
             }
         ]

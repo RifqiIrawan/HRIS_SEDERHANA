@@ -14,7 +14,7 @@ class AttendanceRequest extends BaseRequest
 {
     public function rules(): array
     {
-        $photo = config('hris.photo');
+        $photo = config('parkops.photo');
 
         return [
             'latitude' => ['required', 'numeric', 'between:-90,90'],

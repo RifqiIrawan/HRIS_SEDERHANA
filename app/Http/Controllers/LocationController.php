@@ -16,8 +16,8 @@ class LocationController extends Controller
     {
         if (! $this->wantsData($request)) {
             return view('locations.index', [
-                'defaultRadius' => config('hris.default_radius_meter'),
-                'defaultAccuracy' => config('hris.default_gps_accuracy_limit'),
+                'defaultRadius' => config('parkops.default_radius_meter'),
+                'defaultAccuracy' => config('parkops.default_gps_accuracy_limit'),
             ]);
         }
 

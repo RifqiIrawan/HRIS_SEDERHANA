@@ -58,7 +58,7 @@
     </div>
 
     @if ($filters)
-        {{-- Moved into the toolbar row by HRIS.dataTable, so that it shares a
+        {{-- Moved into the toolbar row by ParkOps.dataTable, so that it shares a
              line with the page-size menu instead of forming a band of its own.
              Hidden until then, or it would flash in place first. --}}
         <div class="dt-filters" hidden>

@@ -103,7 +103,7 @@ class LookupController extends Controller
      *
      * Unlike the other lists these are selected by code, not id — the employees
      * row stores the code — so `code` is what the caller writes into the option
-     * value (HRIS.fillSelect's `valueKey`).
+     * value (ParkOps.fillSelect's `valueKey`).
      *
      * @param  class-string<ReferenceModel>  $model
      */

@@ -90,8 +90,8 @@
 
 @push('scripts')
 <script>
-    window.HRIS_URLS = { base: @json($ref['base']) };
-    window.HRIS_REF = @json(['title' => $ref['title'], 'entity' => $ref['entity']]);
+    window.PARKOPS_URLS = { base: @json($ref['base']) };
+    window.PARKOPS_REF = @json(['title' => $ref['title'], 'entity' => $ref['entity']]);
 </script>
 <script src="{{ asset('js/crud.js') }}"></script>
 <script src="{{ asset('js/reference.js') }}"></script>

@@ -32,10 +32,10 @@ jQuery(function ($) {
 
         $preview.html(
             '<i class="bi bi-info-circle me-1"></i>' +
-            'Shift berjalan <strong>' + HRIS.esc(start) + '</strong> → <strong>' + HRIS.esc(end) + '</strong>' +
+            'Shift berjalan <strong>' + ParkOps.esc(start) + '</strong> → <strong>' + ParkOps.esc(end) + '</strong>' +
             (crosses ? ' <span class="badge text-bg-dark">hari berikutnya</span>' : '') +
             ' · durasi <strong>' + formatDuration(duration) + '</strong>' +
-            ' · dianggap terlambat setelah <strong>' + HRIS.esc(threshold) + '</strong>.'
+            ' · dianggap terlambat setelah <strong>' + ParkOps.esc(threshold) + '</strong>.'
         );
     }
 
@@ -72,8 +72,8 @@ jQuery(function ($) {
 
     $crossDay.add($tolerance).on('change input', renderPreview);
 
-    HRIS.crud({
-        baseUrl: window.HRIS_URLS.base,
+    ParkOps.crud({
+        baseUrl: window.PARKOPS_URLS.base,
         filters: ['#searchInput', '#statusFilter'],
         labels: { create: 'Tambah Shift', edit: 'Ubah Shift' },
         defaults: { late_tolerance_minutes: 15, status: 'ACTIVE', cross_day: false },
@@ -83,10 +83,10 @@ jQuery(function ($) {
         fill: function () { renderPreview(); },
 
         columns: [
-            { data: 'shift_code', className: 'fw-semibold', render: HRIS.esc },
-            { data: 'shift_name', render: HRIS.esc },
-            { data: 'start_time', className: 'text-center text-tabular', render: HRIS.esc },
-            { data: 'end_time', className: 'text-center text-tabular', render: HRIS.esc },
+            { data: 'shift_code', className: 'fw-semibold', render: ParkOps.esc },
+            { data: 'shift_name', render: ParkOps.esc },
+            { data: 'start_time', className: 'text-center text-tabular', render: ParkOps.esc },
+            { data: 'end_time', className: 'text-center text-tabular', render: ParkOps.esc },
             {
                 data: 'cross_day',
                 orderable: false,
@@ -100,15 +100,15 @@ jQuery(function ($) {
             {
                 data: 'late_tolerance_minutes',
                 className: 'text-center text-tabular',
-                render: function (value) { return HRIS.esc(value) + ' mnt'; }
+                render: function (value) { return ParkOps.esc(value) + ' mnt'; }
             },
-            { data: 'status', className: 'text-center', render: HRIS.statusBadge },
+            { data: 'status', className: 'text-center', render: ParkOps.statusBadge },
             {
                 data: null,
                 orderable: false,
                 className: 'text-end text-nowrap',
                 render: function (row) {
-                    return HRIS.rowActions(row.id, 'shift ' + row.shift_code);
+                    return ParkOps.rowActions(row.id, 'shift ' + row.shift_code);
                 }
             }
         ]

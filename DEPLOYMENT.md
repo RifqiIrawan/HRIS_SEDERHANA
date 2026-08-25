@@ -1,6 +1,6 @@
 # Deployment ke Production
 
-Panduan menaikkan HRIS Juru Parkir dari mesin lokal ke server. Template
+Panduan menaikkan ParkOps dari mesin lokal ke server. Template
 lengkapnya ada di [`.env.production.example`](.env.production.example).
 
 ---
@@ -37,12 +37,12 @@ Dua baris **belum ada di `.env` lokal** dan harus ditambahkan:
 
 ```env
 SESSION_SECURE_COOKIE=true    # cookie sesi hanya lewat HTTPS
-HRIS_SEED_DEMO=false          # cegah data contoh ikut ter-seed
+PARKOPS_SEED_DEMO=false          # cegah data contoh ikut ter-seed
 ```
 
-`HRIS_ENFORCE_GEOFENCE` **tidak perlu diisi.** Nilainya mengikuti `APP_ENV`:
+`PARKOPS_ENFORCE_GEOFENCE` **tidak perlu diisi.** Nilainya mengikuti `APP_ENV`:
 `local` → longgar, selain itu → ditegakkan. Isi baris ini hanya kalau suatu
-environment butuh kebalikan dari default-nya (lihat `config/hris.php`).
+environment butuh kebalikan dari default-nya (lihat `config/parkops.php`).
 
 ---
 
@@ -81,7 +81,7 @@ perubahan nama atau hak akses yang dibuat admin tetap bertahan.
 
 > ⚠️ **Jangan** jalankan `php artisan migrate --seed` atau `db:seed` tanpa
 > `--class`. Seeder penuh memasukkan karyawan contoh, lokasi contoh, dan akun
-> login dengan password `password` (`admin@hris.test`, `hr@hris.test`, dan satu
+> login dengan password `password` (`admin@parkops.test`, `hr@parkops.test`, dan satu
 > akun per karyawan contoh).
 
 ### Cache
@@ -184,7 +184,7 @@ masukkan ke rencana backup bersama database.
 
 ```bash
 # Geofence harus ditegakkan
-php artisan tinker --execute="echo config('hris.enforce_geofence') ? 'ENFORCED' : 'OFF';"
+php artisan tinker --execute="echo config('parkops.enforce_geofence') ? 'ENFORCED' : 'OFF';"
 
 # Debug harus mati
 php artisan tinker --execute="echo config('app.debug') ? 'DEBUG ON (BAHAYA)' : 'debug off';"
@@ -217,5 +217,25 @@ php artisan db:seed --class="Database\Seeders\ReferenceSeeder" --force
 php artisan config:cache && php artisan route:cache && php artisan view:cache
 php artisan up
 ```
+
+### Sekali saja: rename ke ParkOps
+
+Rilis rebranding ini mengganti awalan setiap variabel domain dari `HRIS_`
+menjadi `PARKOPS_`. **`.env` di server tidak ikut berubah sendiri.** Kalau
+dibiarkan, aplikasinya tetap jalan tapi diam-diam memakai nilai bawaan — radius
+geofence, batas jendela check-in/check-out, ukuran maksimum foto, dan setelan
+geocoding semuanya balik ke default, bukan ke angka yang sudah kamu setel.
+
+Ganti awalannya di tempat sebelum menyalakan kembali aplikasinya:
+
+```bash
+cp .env .env.sebelum-parkops           # jaring pengaman
+sed -i 's/^HRIS_/PARKOPS_/' .env
+sed -i 's/^APP_NAME=.*/APP_NAME="ParkOps"/' .env
+php artisan config:cache
+```
+
+Nama database sengaja tidak ikut diganti, jadi tidak ada data yang perlu
+dipindahkan dan `DB_DATABASE` tetap apa adanya.
 
 Backup database sebelum `migrate` pada rilis yang mengubah skema.

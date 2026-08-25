@@ -25,7 +25,7 @@ class ShiftSeeder extends Seeder
                     'start_time' => $start,
                     'end_time' => $end,
                     'cross_day' => $crossDay,
-                    'late_tolerance_minutes' => config('hris.default_late_tolerance_minutes'),
+                    'late_tolerance_minutes' => config('parkops.default_late_tolerance_minutes'),
                     'status' => 'ACTIVE',
                 ],
             );

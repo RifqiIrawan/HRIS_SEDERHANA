@@ -30,21 +30,32 @@
             exercising on the engine that actually ships.
         -->
         <env name="DB_CONNECTION" value="mysql"/>
-        <env name="DB_DATABASE" value="hris_juru_parkir_test"/>
+        <env name="DB_DATABASE" value="parkops_test"/>
         <!--
             Pinned so a local .env relaxed for manual testing cannot silently
             disarm the geofence assertions (AC-006 … AC-008). A test that wants
             the relaxed behaviour sets the config itself.
         -->
-        <env name="HRIS_ENFORCE_GEOFENCE" value="true"/>
+        <env name="PARKOPS_ENFORCE_GEOFENCE" value="true"/>
         <!--
             Reverse geocoding calls a third-party service. The suite must not
             depend on the network being up (nor hammer a rate-limited public
             endpoint), so it is off unless a test switches it on and fakes the
             HTTP client.
         -->
-        <env name="HRIS_GEOCODING_ENABLED" value="false"/>
-        <env name="HRIS_SEED_DEMO" value="false"/>
+        <env name="PARKOPS_GEOCODING_ENABLED" value="false"/>
+        <!--
+            Pinned for the same reason as the geofence above: the check-in and
+            check-out windows are exactly what AttendanceTest asserts, and a
+            local .env relaxed for manual testing (a 24-hour check-out window,
+            say) would quietly move the boundary the tests are measuring. A
+            test that wants a different window sets the config itself.
+        -->
+        <env name="PARKOPS_CHECKIN_EARLY_WINDOW_MINUTES" value="240"/>
+        <env name="PARKOPS_CHECKIN_LATE_WINDOW_MINUTES" value="240"/>
+        <env name="PARKOPS_CHECKOUT_EARLY_WINDOW_MINUTES" value="240"/>
+        <env name="PARKOPS_CHECKOUT_GRACE_MINUTES" value="420"/>
+        <env name="PARKOPS_SEED_DEMO" value="false"/>
         <env name="MAIL_MAILER" value="array"/>
         <env name="PULSE_ENABLED" value="false"/>
         <env name="QUEUE_CONNECTION" value="sync"/>

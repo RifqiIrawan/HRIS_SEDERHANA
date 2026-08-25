@@ -60,7 +60,7 @@
 
 @push('scripts')
 <script>
-    window.HRIS_URLS = {
+    window.PARKOPS_URLS = {
         base: @json(route('reports.payroll')),
         export: @json(route('reports.payroll.export')),
         lookups: @json(route('lookups'))
@@ -68,6 +68,6 @@
 </script>
 <script src="{{ asset('js/reports.js') }}"></script>
 <script>
-    jQuery(function () { HRIS.payrollReport(); });
+    jQuery(function () { ParkOps.payrollReport(); });
 </script>
 @endpush

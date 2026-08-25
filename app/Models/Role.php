@@ -34,9 +34,16 @@ class Role extends Model
         return $this->hasMany(User::class);
     }
 
-    /** The menus this role may reach; absence of a row is denial. */
+    /**
+     * The menus this role may reach; absence of a row is denial.
+     *
+     * The pivot carries which verbs the grant covers, so the relation has to
+     * bring `actions` back with it — a menu row without it reads as unlimited.
+     */
     public function menus(): BelongsToMany
     {
-        return $this->belongsToMany(Menu::class);
+        return $this->belongsToMany(Menu::class)
+            ->using(MenuRole::class)
+            ->withPivot('actions');
     }
 }

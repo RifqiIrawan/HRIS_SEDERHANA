@@ -96,7 +96,10 @@ class CrudSmokeTest extends TestCase
 
         $this->putJson('/roles/menu-access', [
             'role_id' => $hr->id,
-            'menus' => $menuIds,
+            'menus' => array_map(
+                fn (int $id) => ['id' => $id, 'actions' => ['read']],
+                $menuIds,
+            ),
         ])->assertOk();
 
         $this->assertEqualsCanonicalizing($menuIds, $hr->menus()->pluck('menus.id')->all());

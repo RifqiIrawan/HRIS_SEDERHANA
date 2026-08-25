@@ -10,7 +10,7 @@ use Illuminate\Database\Seeder;
  *
  * Skip the sample roster and attendance with:
  *     php artisan db:seed --class=Database\\Seeders\\DatabaseSeeder --no-interaction
- *     HRIS_SEED_DEMO=false php artisan migrate:fresh --seed
+ *     PARKOPS_SEED_DEMO=false php artisan migrate:fresh --seed
  */
 class DatabaseSeeder extends Seeder
 {
@@ -29,7 +29,7 @@ class DatabaseSeeder extends Seeder
             UserSeeder::class,
         ]);
 
-        if (env('HRIS_SEED_DEMO', true)) {
+        if (env('PARKOPS_SEED_DEMO', true)) {
             $this->call(DemoDataSeeder::class);
         }
     }

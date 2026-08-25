@@ -36,13 +36,13 @@
 
         <div class="alert d-none" id="stateAlert" role="alert"></div>
 
-        {{-- Shown only while config('hris.enforce_geofence') is false, so the
+        {{-- Shown only while config('parkops.enforce_geofence') is false, so the
              screen never quietly accepts a reading from anywhere. --}}
         <div class="alert alert-danger d-none" id="geofenceWarning" role="alert">
             <i class="bi bi-shield-exclamation me-1"></i>
             <strong>Mode uji coba:</strong> penegakan jarak &amp; akurasi GPS sedang dinonaktifkan.
             Absensi diterima dari posisi mana pun. Aktifkan kembali
-            <code>HRIS_ENFORCE_GEOFENCE=true</code> sebelum digunakan sungguhan.
+            <code>PARKOPS_ENFORCE_GEOFENCE=true</code> sebelum digunakan sungguhan.
         </div>
 
         <div id="attendancePanel" class="d-none">
@@ -174,7 +174,7 @@
 @push('scripts')
 <script src="{{ asset('vendor/leaflet/leaflet.js') }}"></script>
 <script>
-    window.HRIS_URLS = {
+    window.PARKOPS_URLS = {
         context: @json(route('attendance.index')),
         checkIn: @json(route('attendance.check-in')),
         checkOut: @json(route('attendance.check-out')),

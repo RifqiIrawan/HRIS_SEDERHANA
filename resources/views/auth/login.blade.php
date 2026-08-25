@@ -5,12 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Login · {{ config('app.name') }}</title>
+    <link rel="icon" href="{{ asset('img/parkops-icon.svg') }}" type="image/svg+xml">
+    <link rel="alternate icon" href="{{ asset('favicon.ico') }}" sizes="any">
 
     {{-- Matches the app shell: the theme is settled before the first paint. --}}
     <script>
         (function () {
             try {
-                var saved = localStorage.getItem('hris-theme');
+                var saved = localStorage.getItem('parkops-theme');
                 if (saved === 'dark' || saved === 'light') {
                     document.documentElement.setAttribute('data-bs-theme', saved);
                 }
@@ -20,7 +22,7 @@
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@500;600&display=swap">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="{{ asset('css/app.css') }}">
@@ -37,31 +39,22 @@
 
         .login-card { width: 100%; max-width: 396px; }
 
-        .login-mark {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 3rem;
-            height: 3rem;
-            border-radius: var(--radius-md);
-            background: var(--accent-wash);
-            color: var(--accent);
-            font-size: 1.6rem;
+        .login-card h1 {
+            margin: 0;
         }
     </style>
 </head>
 <body>
 <div class="login-card">
     <div class="text-center mb-4">
-        <span class="login-mark"><i class="bi bi-p-square-fill"></i></span>
-        <h1 class="h5 mt-3 mb-1">HRIS Juru Parkir</h1>
-        <p class="small text-body-secondary mb-0">Absensi GPS &amp; Payroll Harian</p>
+        {{-- The tagline rides inside the lockup, so it is not repeated here. --}}
+        <h1 class="mb-0"><x-brand size="lg" :tagline="true" /></h1>
     </div>
 
     @php
         // Dev convenience: the seeder's ADMIN account is pre-filled so the form can be
         // submitted straight away. Guarded to `local` — never pre-fill in production.
-        $demoEmail = app()->environment('local') ? 'admin@hris.test' : '';
+        $demoEmail = app()->environment('local') ? 'admin@parkops.test' : '';
         $demoPassword = app()->environment('local') ? 'password' : '';
     @endphp
 
@@ -115,7 +108,7 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="{{ asset('js/app.js') }}"></script>
 <script>
-    window.HRIS_ROUTES = { login: @json(route('login.attempt')) };
+    window.PARKOPS_ROUTES = { login: @json(route('login.attempt')) };
 </script>
 <script src="{{ asset('js/auth.js') }}"></script>
 </body>

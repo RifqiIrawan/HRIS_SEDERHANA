@@ -41,14 +41,14 @@ jQuery(function ($) {
      * ───────────────────────────────────────────────────────────────── */
 
     function loadContext() {
-        return HRIS.api({ url: window.HRIS_URLS.context })
+        return ParkOps.api({ url: window.PARKOPS_URLS.context })
             .done(function (data) {
                 context = data;
                 applyState();
             })
             .fail(function (error) {
                 showState('danger', error.message);
-                HRIS.handleError(error);
+                ParkOps.handleError(error);
             });
     }
 
@@ -356,7 +356,7 @@ jQuery(function ($) {
      * would not change over a few metres of GPS jitter.
      */
     function refreshAddress() {
-        if (!position || !window.HRIS_URLS.geocode) return;
+        if (!position || !window.PARKOPS_URLS.geocode) return;
 
         if (addressAnchor && calculateDisplayDistance(
             addressAnchor.latitude, addressAnchor.longitude,
@@ -371,8 +371,8 @@ jQuery(function ($) {
 
         $address.html('<span class="text-body-secondary">Mencari alamat…</span>');
 
-        addressRequest = HRIS.api({
-            url: window.HRIS_URLS.geocode,
+        addressRequest = ParkOps.api({
+            url: window.PARKOPS_URLS.geocode,
             data: { latitude: coords.latitude, longitude: coords.longitude }
         })
             .done(function (data) {
@@ -431,7 +431,7 @@ jQuery(function ($) {
 
     function openCamera() {
         if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-            HRIS.toast('Kamera tidak tersedia di browser ini. Gunakan tombol "Ambil dari Kamera Perangkat".', 'warning');
+            ParkOps.toast('Kamera tidak tersedia di browser ini. Gunakan tombol "Ambil dari Kamera Perangkat".', 'warning');
             return;
         }
 
@@ -451,7 +451,7 @@ jQuery(function ($) {
                 $('#retakePhoto').addClass('d-none');
             })
             .catch(function () {
-                HRIS.toast(
+                ParkOps.toast(
                     'Akses kamera ditolak. Berikan izin kamera, atau gunakan tombol "Ambil dari Kamera Perangkat".',
                     'danger'
                 );
@@ -471,7 +471,7 @@ jQuery(function ($) {
         var video = document.getElementById('cameraVideo');
 
         if (!video.videoWidth) {
-            HRIS.toast('Kamera belum siap, coba lagi sesaat.', 'warning');
+            ParkOps.toast('Kamera belum siap, coba lagi sesaat.', 'warning');
             return;
         }
 
@@ -487,7 +487,7 @@ jQuery(function ($) {
 
         canvas.toBlob(function (blob) {
             if (!blob) {
-                HRIS.toast('Gagal mengambil foto. Coba lagi.', 'danger');
+                ParkOps.toast('Gagal mengambil foto. Coba lagi.', 'danger');
                 return;
             }
 
@@ -543,7 +543,7 @@ jQuery(function ($) {
         if (!file) return;
 
         if (file.size > 5 * 1024 * 1024) {
-            HRIS.toast('Ukuran foto maksimal 5 MB.', 'danger');
+            ParkOps.toast('Ukuran foto maksimal 5 MB.', 'danger');
             this.value = '';
             return;
         }
@@ -559,12 +559,12 @@ jQuery(function ($) {
 
     function submit(url, $button, busyLabel) {
         if (!position) {
-            HRIS.toast('Lokasi GPS belum tersedia.', 'warning');
+            ParkOps.toast('Lokasi GPS belum tersedia.', 'warning');
             return;
         }
 
         if (!photoBlob) {
-            HRIS.toast('Ambil foto terlebih dahulu.', 'warning');
+            ParkOps.toast('Ambil foto terlebih dahulu.', 'warning');
             return;
         }
 
@@ -574,19 +574,19 @@ jQuery(function ($) {
         formData.append('accuracy', position.accuracy);
         formData.append('photo', photoBlob, 'attendance.jpg');
 
-        HRIS.busy($button, true, busyLabel);
+        ParkOps.busy($button, true, busyLabel);
         $checkIn.prop('disabled', true);
         $checkOut.prop('disabled', true);
 
-        HRIS.api({ url: url, type: 'POST', data: formData })
+        ParkOps.api({ url: url, type: 'POST', data: formData })
             .done(function (attendance) {
-                HRIS.toast('Absensi berhasil dikirim.', 'success');
+                ParkOps.toast('Absensi berhasil dikirim.', 'success');
                 clearPhoto();
                 showAttendanceResult(attendance);
                 loadContext();
             })
             .fail(function (error) {
-                HRIS.toast(error.message, 'danger');
+                ParkOps.toast(error.message, 'danger');
 
                 // A rejection for distance or accuracy means the reading needs
                 // to be retaken, not resubmitted.
@@ -602,12 +602,12 @@ jQuery(function ($) {
                 refreshActionButtons();
             })
             .always(function () {
-                HRIS.busy($button, false);
+                ParkOps.busy($button, false);
             });
     }
 
-    $checkIn.on('click', function () { submit(window.HRIS_URLS.checkIn, $checkIn, 'Mengirim…'); });
-    $checkOut.on('click', function () { submit(window.HRIS_URLS.checkOut, $checkOut, 'Mengirim…'); });
+    $checkIn.on('click', function () { submit(window.PARKOPS_URLS.checkIn, $checkIn, 'Mengirim…'); });
+    $checkOut.on('click', function () { submit(window.PARKOPS_URLS.checkOut, $checkOut, 'Mengirim…'); });
 
     /* ─────────────────────────────────────────────────────────────────
      * Result (spec §51 showAttendanceResult)
@@ -625,26 +625,26 @@ jQuery(function ($) {
         }
 
         var rows = [
-            ['Tanggal', HRIS.formatDate(attendance.attendance_date)],
+            ['Tanggal', ParkOps.formatDate(attendance.attendance_date)],
             ['Shift', attendance.shift_name || '−'],
             ['Lokasi', attendance.location_name || '−'],
-            ['Check-In', attendance.check_in_at ? HRIS.formatTime(attendance.check_in_at) : '−'],
+            ['Check-In', attendance.check_in_at ? ParkOps.formatTime(attendance.check_in_at) : '−'],
             ['Jarak Check-In', attendance.check_in_distance !== null && attendance.check_in_distance !== undefined
-                ? HRIS.formatNumber(attendance.check_in_distance, 2) + ' m' : '−'],
+                ? ParkOps.formatNumber(attendance.check_in_distance, 2) + ' m' : '−'],
             ['Akurasi Check-In', attendance.check_in_accuracy !== null && attendance.check_in_accuracy !== undefined
-                ? HRIS.formatNumber(attendance.check_in_accuracy, 2) + ' m' : '−'],
+                ? ParkOps.formatNumber(attendance.check_in_accuracy, 2) + ' m' : '−'],
             ['Alamat Check-In', attendance.check_in_address || '−'],
-            ['Check-Out', attendance.check_out_at ? HRIS.formatTime(attendance.check_out_at) : '−'],
+            ['Check-Out', attendance.check_out_at ? ParkOps.formatTime(attendance.check_out_at) : '−'],
             ['Jarak Check-Out', attendance.check_out_distance !== null && attendance.check_out_distance !== undefined
-                ? HRIS.formatNumber(attendance.check_out_distance, 2) + ' m' : '−'],
+                ? ParkOps.formatNumber(attendance.check_out_distance, 2) + ' m' : '−'],
             ['Alamat Check-Out', attendance.check_out_address || '−'],
             ['Keterlambatan', attendance.late_minutes ? attendance.late_minutes + ' menit' : 'Tepat waktu'],
-            ['Status', HRIS.statusBadge(attendance.status)]
+            ['Status', ParkOps.statusBadge(attendance.status)]
         ];
 
         $('#resultBody').html(rows.map(function (row) {
-            return '<dt class="col-5 fw-normal text-body-secondary">' + HRIS.esc(row[0]) + '</dt>' +
-                '<dd class="col-7 mb-2">' + (row[0] === 'Status' ? row[1] : HRIS.esc(row[1])) + '</dd>';
+            return '<dt class="col-5 fw-normal text-body-secondary">' + ParkOps.esc(row[0]) + '</dt>' +
+                '<dd class="col-7 mb-2">' + (row[0] === 'Status' ? row[1] : ParkOps.esc(row[1])) + '</dd>';
         }).join(''));
 
         $('#resultCard').removeClass('d-none');

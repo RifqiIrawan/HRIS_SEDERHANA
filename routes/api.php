@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Route;
 
 /*
 |--------------------------------------------------------------------------
-| Mobile API routes — HRIS-PARKIR-MOBILE
+| Mobile API routes — ParkOps-PARKIR-MOBILE
 |--------------------------------------------------------------------------
 |
 | Token auth (Sanctum), stateless, no CSRF and no session. Sanctum is used

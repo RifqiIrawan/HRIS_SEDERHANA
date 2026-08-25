@@ -65,11 +65,11 @@ class Location extends Model
 
     public function effectiveRadiusMeter(): float
     {
-        return (float) ($this->radius_meter ?: config('hris.default_radius_meter'));
+        return (float) ($this->radius_meter ?: config('parkops.default_radius_meter'));
     }
 
     public function effectiveAccuracyLimit(): float
     {
-        return (float) ($this->gps_accuracy_limit ?: config('hris.default_gps_accuracy_limit'));
+        return (float) ($this->gps_accuracy_limit ?: config('parkops.default_gps_accuracy_limit'));
     }
 }
