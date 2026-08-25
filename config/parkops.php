@@ -44,6 +44,26 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Demo login
+    |--------------------------------------------------------------------------
+    |
+    | Fills the login form with the seeded ADMIN account so a demo can be
+    | driven without typing credentials. On a laptop that is a convenience; on
+    | any reachable host it is a working administrator password handed to
+    | whoever opens the page, so it is off unless switched on by name.
+    |
+    | Deliberately its own flag rather than a second meaning for APP_ENV: a
+    | demo server that wanted the prefill would otherwise have to call itself
+    | "local", which also disarms the geofence above.
+    */
+
+    'demo_login' => (bool) env(
+        'PARKOPS_DEMO_LOGIN',
+        env('APP_ENV', 'production') === 'local',
+    ),
+
+    /*
+    |--------------------------------------------------------------------------
     | Shift & attendance windows
     |--------------------------------------------------------------------------
     |

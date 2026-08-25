@@ -52,10 +52,13 @@
     </div>
 
     @php
-        // Dev convenience: the seeder's ADMIN account is pre-filled so the form can be
-        // submitted straight away. Guarded to `local` — never pre-fill in production.
-        $demoEmail = app()->environment('local') ? 'admin@parkops.test' : '';
-        $demoPassword = app()->environment('local') ? 'password' : '';
+        // The seeded ADMIN account, pre-filled so a demo can be driven without
+        // typing it. On by default only on a laptop; anywhere else it has to be
+        // asked for by name (PARKOPS_DEMO_LOGIN), because it is a working
+        // administrator password shown to whoever opens the page.
+        $demoLogin = config('parkops.demo_login');
+        $demoEmail = $demoLogin ? 'admin@parkops.test' : '';
+        $demoPassword = $demoLogin ? 'password' : '';
     @endphp
 
     <div class="card">
